@@ -5,7 +5,8 @@ const bcrypt = require('bcryptjs');
 const User = require('./model/user');
 const jwt = require('jsonwebtoken');
 
-//secret token untuk json web token, diberikan ke client yang melakukan login
+/*secret token untuk json web token, hasil token yang di encode dengan base64 akan
+diberikan ke client yang melakukan login*/
 const JWT_SECRET = '$2a$10$YJYHqw1XxugfTGHOWL.GSODjNJlLOfic8MWs5T8jbKxPDMDTvm5Ti';
 
 const app = express();
