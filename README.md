@@ -20,30 +20,30 @@ $ node src/server.js
 
 ## Kontrak API/Route
 
-- Register New User :
-URL: "http://localhost:8080/user/register"
-Method: POST
-Headers : Content-Type: application/json
-Body : {"username" : string, "password" : string}
-Response :
+- Register New User : <br />
+URL: "http://localhost:8080/user/register" <br />
+Method: POST <br />
+Headers : Content-Type: application/json <br />
+Body : {"username" : string, "password" : string} <br />
+Response : <br />
 { status: 'ok', message: 'user created' }
 
-- Login :
-URL: "http://localhost:8080/user/login"
-Method: POST
-Headers : Content-Type: application/json
-Body : {"username" : string, "password" : string}
-Response : 
-{ status: 'ok', data: token (string type)}
+- Login : <br />
+URL: "http://localhost:8080/user/login" <br />
+Method: POST <br />
+Headers : Content-Type: application/json <br />
+Body : {"username" : string, "password" : string} <br />
+Response : <br />
+{ status: 'ok', data: token (string type)} 
 
-* Token ini merupakan string yang dapat disimpan dalam local storage
+* Token ini merupakan string yang dapat disimpan dalam local storage <br />
 
-- Get Class Data Example :
-URL: "http://localhost:8080/getExampleData"
-Method: POST
-Headers : Content-Type: application/json
-Body : {"token" : token (string type)}
-Response : 
+- Get Class Data Example : <br />
+URL: "http://localhost:8080/getExampleData" <br />
+Method: POST <br />
+Headers : Content-Type: application/json <br />
+Body : {"token" : token (string type)} <br />
+Response : <br />
 {   "status": "ok",
     "data": {
         "kelas": [
@@ -53,10 +53,10 @@ Response :
     }
  }
  
- - Get All Users :
-URL: "http://localhost:8080/user/userList"
-Method: GET
-Response : 
+ - Get All Users : <br />
+URL: "http://localhost:8080/user/userList" <br />
+Method: GET <br />
+Response : <br />
 {   "_id": database id ,
     "username": username,
     "password": password,
