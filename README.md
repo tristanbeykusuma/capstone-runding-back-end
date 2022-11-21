@@ -52,14 +52,3 @@ Response : <br />
         ]
     }
  }
- 
- - Get All Users : <br />
-URL: "http://localhost:8080/user/userList" <br />
-Method: GET <br />
-Response : <br />
-{   "_id": database id ,
-    "username": username,
-    "password": password,
-    "__v": document version
- }
- 
