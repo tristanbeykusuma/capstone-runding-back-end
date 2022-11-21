@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const User = require('./model/user');
 const jwt = require('jsonwebtoken');
 
+//secret token untuk json web token, diberikan ke client yang melakukan login
 const JWT_SECRET = '$2a$10$YJYHqw1XxugfTGHOWL.GSODjNJlLOfic8MWs5T8jbKxPDMDTvm5Ti';
 
 const app = express();
@@ -13,14 +14,7 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
-app.use(
-  cookieSession({
-    name: "bezkoder-session",
-    secret: "COOKIE_SECRET", // should use as secret environment variable
-    httpOnly: true
-  })
-);
-
+//membuat koneksi dengan database mongodb, lebih jelasnya yaitu database runding_database
 mongoose.connect(`mongodb+srv://user12345:runding12345@clusterrunding.dlaz7k4.mongodb.net/runding_database?retryWrites=true&w=majority`, {
     useNewUrlParser: true,
     useUnifiedTopology: true
@@ -35,9 +29,10 @@ mongoose.connect(`mongodb+srv://user12345:runding12345@clusterrunding.dlaz7k4.mo
 
 
 app.get("/", (req, res) => {
-  res.json({ message: "Welcome to bezkoder application." });
+  res.json({ message: "Welcome to the application." });
 });
 
+//mendapatkan list user dari database runding_database
 app.get("/user/userList", async (req, res) => {
   User.find({}, function(err, users) {
     var userMap = {};
@@ -50,6 +45,7 @@ app.get("/user/userList", async (req, res) => {
   });
 });
 
+//mendapatkan contoh data, hanya dapat direquest dengan request yang berisi body json web token hasil login
 app.post('/getExampleData', async (req, res) => {
 	const { token } = req.body
 
@@ -74,6 +70,7 @@ app.post('/getExampleData', async (req, res) => {
 	}
 })
 
+//melakukan login, jika berhasil mengirim repsonse json web token reusable
 app.post('/user/login', async (req, res) => {
 	const { username, password } = req.body
 	const user = await User.findOne({ username }).lean()
@@ -97,6 +94,7 @@ app.post('/user/login', async (req, res) => {
 	res.json({ status: 'error', error: 'Invalid username/password' })
 })
 
+//melakukan register user baru dan menambahkannya pada database runding_database
 app.post('/user/register', async (req, res) => {
 	const { username, password: plainTextPassword } = req.body
 
@@ -133,6 +131,7 @@ app.post('/user/register', async (req, res) => {
 	res.json({ status: 'ok', message: 'user created' })
 })
 
+//menjalankan server pada port 8080
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
