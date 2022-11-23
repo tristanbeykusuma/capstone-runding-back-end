@@ -17,9 +17,10 @@ module.exports = async (req, res, next) => {
 
     if (!findUser) {
       return res.json({ status: "error", error: "Invalid username/password" });
+    } else {
+      req.userloggedIn = { id: findUser._id };
+      next();
     }
-
-    next();
   } catch (error) {
     if (error.message === "jwt malformed" || "invalid token") {
       res.json({ status: "error", error: ";))" });
