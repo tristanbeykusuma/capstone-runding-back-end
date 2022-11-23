@@ -157,12 +157,6 @@ app.post("/user/register", async (req, res) => {
   res.json({ status: "ok", message: "user created" });
 });
 
-//menjalankan server pada port 8080
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}.`);
-});
-
 // Runding Route
 
 app.get("/runding", auth, async (req, res) => {
@@ -226,4 +220,10 @@ app.delete("/runding/:id/delete", auth, async (req, res) => {
   } catch (error) {
     res.json({ status: "error", message: error });
   }
+});
+
+//menjalankan server pada port 8080
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}.`);
 });
