@@ -6,6 +6,7 @@ const RundingSchema = new mongoose.Schema(
     logo_grup: { type: String, required: true },
     subject: { type: String, required: true },
     deskripsi: { type: String, required: true },
+    administrator: [{ type: mongoose.Schema.Types.ObjectId, ref: "UserSchema" }],
     peserta: [{ type: mongoose.Schema.Types.ObjectId, ref: "UserSchema" }],
   },
   { collection: "rundings" }
