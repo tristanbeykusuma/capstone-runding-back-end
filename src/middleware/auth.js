@@ -7,7 +7,7 @@ const JWT_SECRET =
   "$2a$10$YJYHqw1XxugfTGHOWL.GSODjNJlLOfic8MWs5T8jbKxPDMDTvm5Ti";
 
 module.exports = async (req, res, next) => {
-  const { token } = req.body;
+  const token = req.header('auth-token');
 
   try {
     const user = jwt.verify(token, JWT_SECRET);
@@ -16,6 +16,7 @@ module.exports = async (req, res, next) => {
     const findUser = await User.findOne({ username }).lean();
 
     if (!findUser) {
+      res.status(400)
       return res.json({ status: "error", error: "Invalid username/password" });
     } else {
       req.userloggedIn = { id: findUser._id };
@@ -24,9 +25,8 @@ module.exports = async (req, res, next) => {
   } catch (error) {
     if (error.message === "jwt malformed" || "invalid token") {
       res.json({ status: "error", error: ";))" });
-      console.log(token);
+      console.log(token + " Has accessed the database");
     } else {
-      console.log(error);
       res.json({ status: "error", error: ";))" });
     }
   }
