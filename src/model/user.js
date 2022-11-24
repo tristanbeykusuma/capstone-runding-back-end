@@ -4,11 +4,12 @@ const mongoose = require('mongoose');
 const UserSchema = new mongoose.Schema(
 	{
 		username: { type: String, required: true, unique: true },
-		password: { type: String, required: true }
+		password: { type: String, required: true },
+		kelas: [{ type: mongoose.Schema.Types.ObjectId, ref: "RundingSchema" }]
 	},
 	{ collection: 'users' }
 )
 
-const User = mongoose.model('UserSchema', UserSchema)
+const User = mongoose.model('UserSchema', UserSchema);
 
 module.exports = User;
