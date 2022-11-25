@@ -24,7 +24,7 @@ $ node src/server.js
 URL: "http://localhost:8080/user/register" <br />
 Method: POST <br />
 Headers : Content-Type: application/json <br />
-Body : {"username" : string, "password" : string} <br />
+Body : {"username" : string, "email": string, "password" : string} <br />
 Response : <br />
 { status: 'ok', message: 'user created' }
 
@@ -41,8 +41,10 @@ Response : <br />
 - Get Class Data Example : <br />
 URL: "http://localhost:8080/getExampleData" <br />
 Method: POST <br />
-Headers : Content-Type: application/json <br />
-Body : {"token" : token (string type)} <br />
+Headers : 
+Content-Type: application/json
+<br />
+auth-token: token (string type) <br />
 Response : <br />
 {   "status": "ok",
     "data": {
@@ -52,3 +54,27 @@ Response : <br />
         ]
     }
  }
+
+- Get Daftar Semua Ruang Diskusi : <br />
+URL: "http://localhost:8080/runding" <br />
+Method: GET <br />
+Headers : 
+Content-Type: application/json
+<br />
+auth-token: token (string type) <br />
+Response : <br />
+{   "status": "ok",
+    "data": [datarunding]
+}
+
+- Get Daftar Ruang Diskusi Spesifik : <br />
+URL: "http://localhost:8080/runding/:id" <br />
+Method: GET <br />
+Headers : 
+Content-Type: application/json
+<br />
+auth-token: token (string type) <br />
+Response : <br />
+{   "status": "ok",
+    "data": datarunding (of id)
+}
