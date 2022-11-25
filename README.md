@@ -2,7 +2,7 @@
 
 Repository ini berisikan source code dari backend aplikasi RUNDING yang dibangun menggunakan Framework Express.Js. Front-End project capstone tersebut dapat diakses pada [Runding Front-End Web](https://github.com/Sitouxz/runding-web)
 
-## Instructions Install
+## Install Instructions
 First clone this repository.
 ```bash
 $ git clone https://github.com/tristanbeykusuma/capstone-runding-back-end.git
