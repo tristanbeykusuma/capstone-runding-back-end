@@ -42,8 +42,7 @@ Response : <br />
 URL: "http://localhost:8080/getExampleData" <br />
 Method: POST <br />
 Headers : 
-Content-Type: application/json
-<br />
+Content-Type: application/json<br />
 auth-token: token (string type) <br />
 Response : <br />
 {   "status": "ok",
@@ -59,8 +58,7 @@ Response : <br />
 URL: "http://localhost:8080/runding" <br />
 Method: GET <br />
 Headers : 
-Content-Type: application/json
-<br />
+Content-Type: application/json<br />
 auth-token: token (string type) <br />
 Response : <br />
 {   "status": "ok",
@@ -71,8 +69,7 @@ Response : <br />
 URL: "http://localhost:8080/runding/:id" <br />
 Method: GET <br />
 Headers : 
-Content-Type: application/json
-<br />
+Content-Type: application/json<br />
 auth-token: token (string type) <br />
 Response : <br />
 {   "status": "ok",
