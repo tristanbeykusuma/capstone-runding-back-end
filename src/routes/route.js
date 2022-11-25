@@ -8,6 +8,8 @@ const auth = require("../middleware/auth");
 
 const User = require("../model/user");
 const Runding = require("../model/runding");
+const Posts = require("../model/posts");
+const Comment = require("../model/comment");
 
 //mendapatkan list user dari database runding_database
 router.get("/user/userList", async (req, res) => {
@@ -38,7 +40,7 @@ router.get("/user/userList", async (req, res) => {
 });
 
 //mendapatkan contoh data, hanya dapat direquest dengan request yang berisi body json web token hasil login
-router.post("/getExampleData",auth, async (req, res) => {
+router.get("/getExampleData",auth, async (req, res) => {
 
   try {
     res.json({
@@ -186,6 +188,86 @@ router.delete("/runding/:id", auth, async (req, res) => {
     await Runding.deleteOne({ _id: id });
     res.json({ status: "ok", message: "new group delete" });
   } catch (error) {
+    res.json({ status: "error", message: error });
+  }
+});
+
+// Posts/Questions Route
+
+router.get("/runding/posts/:id", auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const dataRundingPost = await Posts.find({ runding_id: id });
+    res.json({ status: "ok", data: dataRundingPost });
+  } catch (error) {
+    res.json({ status: "error", error: error.response });
+  }
+});
+
+router.post("/posts/create/:id", auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title_form, description_form, tags_form } = req.body;
+    const newPost = await Posts.create({
+      runding_id: mongoose.Types.ObjectId(id),
+      title: title_form,
+      description: description_form,
+      tags: tags_form,
+      author: [req.userloggedIn.id],
+    })
+
+    res.json({ status: "ok", message: "new question created", data: newPost});
+  } catch (error) {
+    res.json({ status: "error", message: error });
+  }
+});
+
+// Comments Route
+
+router.get("/posts/comments/:postid", auth, async (req, res) => {
+  try {
+    const { postid } = req.params;
+    const dataRundingComments = await Comment.find({ post_id: postid });
+    res.json({ status: "ok", data: dataRundingComments });
+  } catch (error) {
+    console.log(error);
+    res.json({ status: "error", message: error });
+  }
+});
+
+router.post("/comments/create/:postid", auth, async (req, res) => {
+  try {
+    const { postid } = req.params;
+    const { content_form } = req.body;
+    const newComment = await Comment.create({
+      post_id: mongoose.Types.ObjectId(postid),
+      content: content_form,
+      author_id: [req.userloggedIn.id],
+      author_username: [req.userloggedIn.username],
+    })
+
+    res.json({ status: "ok", message: newComment});
+  } catch (error) {
+    console.log(error)
+    res.json({ status: "error", message: error });
+  }
+});
+
+router.put("/comments/like/:commentid", auth, async (req, res) => {
+  try {
+    const { commentid } = req.params;
+    const commentLike = await Comment.findOne({ _id: commentid });
+    if (!commentLike) return res.status(400).send("reply doesn't exists");
+    await Comment.updateOne(
+      { _id: mongoose.Types.ObjectId(commentid) },
+      {
+        $push: { likes: req.userloggedIn.id }
+      }
+    );
+
+    res.json({ status: "ok", message: "Comment liked"});
+  } catch (error) {
+    console.log(error)
     res.json({ status: "error", message: error });
   }
 });
