@@ -11,6 +11,11 @@ const Runding = require("../model/runding");
 const Posts = require("../model/posts");
 const Comment = require("../model/comment");
 
+/*secret token untuk json web token, hasil token yang di encode dengan base64 akan
+diberikan ke client yang melakukan login*/
+const JWT_SECRET =
+  "$2a$10$YJYHqw1XxugfTGHOWL.GSODjNJlLOfic8MWs5T8jbKxPDMDTvm5Ti";
+
 //mendapatkan list user dari database runding_database
 router.get("/user/userList", async (req, res) => {
   const token = req.header('auth-token');
