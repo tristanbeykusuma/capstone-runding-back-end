@@ -2,7 +2,7 @@
 
 Repository ini berisikan source code dari backend aplikasi RUNDING yang dibangun menggunakan Framework Express.Js. Front-End project capstone tersebut dapat diakses pada [Runding Front-End Web](https://github.com/Sitouxz/runding-web)
 
-## Instructions Install
+## Install Instructions
 First clone this repository.
 ```bash
 $ git clone https://github.com/tristanbeykusuma/capstone-runding-back-end.git
@@ -15,7 +15,7 @@ $ npm install # or yarn
 
 Start the server
 ```bash
-$ node src/server.js
+$ npm run start
 ```
 
 ## Kontrak API/Route
@@ -41,7 +41,7 @@ Response : <br />
 - Get Class Data Example : <br />
 URL: "http://localhost:8080/getExampleData" <br />
 Method: POST <br />
-Headers : 
+Headers : <br />
 Content-Type: application/json<br />
 auth-token: token (string type) <br />
 Response : <br />
@@ -57,7 +57,7 @@ Response : <br />
 - Get Daftar Semua Ruang Diskusi : <br />
 URL: "http://localhost:8080/runding" <br />
 Method: GET <br />
-Headers : 
+Headers : <br />
 Content-Type: application/json<br />
 auth-token: token (string type) <br />
 Response : <br />
@@ -68,7 +68,7 @@ Response : <br />
 - Get Daftar Ruang Diskusi Spesifik : <br />
 URL: "http://localhost:8080/runding/:id" <br />
 Method: GET <br />
-Headers : 
+Headers : <br />
 Content-Type: application/json<br />
 auth-token: token (string type) <br />
 Response : <br />

@@ -19,7 +19,7 @@ module.exports = async (req, res, next) => {
       res.status(400)
       return res.json({ status: "error", error: "Invalid username/password" });
     } else {
-      req.userloggedIn = { id: findUser._id };
+      req.userloggedIn = { id: findUser._id, username: findUser.username };
       next();
     }
   } catch (error) {

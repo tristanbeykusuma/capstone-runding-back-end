@@ -9,7 +9,7 @@ const RundingSchema = new mongoose.Schema(
     administrator: [{ type: mongoose.Schema.Types.ObjectId, ref: "UserSchema" }],
     peserta: [{ type: mongoose.Schema.Types.ObjectId, ref: "UserSchema" }],
   },
-  { collection: "rundings" }
+  { collection: "rundings", timestamps: true }
 );
 
 const Runding = mongoose.model("RundingSchema", RundingSchema);
