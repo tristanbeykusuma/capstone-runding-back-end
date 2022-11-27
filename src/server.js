@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
+const path = require("path");  
 
 //routes
 const Routes = require("./routes/route");
@@ -41,6 +42,7 @@ mongoose
 
 //route middleware
 app.use("/", Routes);
+app.use("/images", express.static(path.join("src/images")));  
 
 //menjalankan server pada port 8080
 const PORT = process.env.PORT || 8080;

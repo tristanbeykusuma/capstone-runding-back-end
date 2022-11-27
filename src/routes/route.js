@@ -6,12 +6,14 @@ const fs = require("fs");
 const path = require("path");
 
 const auth = require("../middleware/auth");
+const { uploadLogo } = require("../middleware/uploadLogo");
+const { storeImage } = require('../middleware/storeImage');
+const { putStoreImage } = require('../middleware/putStoreImage');
 
 const User = require("../model/user");
 const Runding = require("../model/runding");
 const Posts = require("../model/posts");
 const Comment = require("../model/comment");
-const { uploadLogo } = require("../middleware/uploadLogo");
 
 /*secret token untuk json web token, hasil token yang di encode dengan base64 akan
 diberikan ke client yang melakukan login*/
@@ -150,17 +152,20 @@ router.post(
   "/runding/create",
   auth,
   uploadLogo("logo_form"),
+  storeImage,
   async (req, res) => {
     try {
       const { subject_form, deskripsi_form } = req.body;
-      const url = req.protocol + "://" + req.get("host");
-      let class_id;
-      await Runding.create({
-        logo_grup: url + "/images/" + req.file.filename,
+      /*const url = req.protocol + "://" + req.get("host");*/
+      const url = req.imageURL;
+      const newRunding = await Runding.create({
+        logo_grup: url,
         subject: subject_form,
         deskripsi: deskripsi_form,
         administrator: [req.userloggedIn.id],
-      }).then((kelas) => (class_id = kelas._id));
+      })
+        
+      const class_id = newRunding._id;
 
       await User.updateOne(
         { _id: req.userloggedIn.id },
@@ -168,20 +173,22 @@ router.post(
           $push: { kelas: class_id },
         }
       );
-
-      res.json({ status: "ok", message: "new group created" });
+      res.json({ status: "ok", message: "new group created", data: newRunding });
     } catch (error) {
       res.json({ status: "error", message: error });
     }
   }
 );
 
-router.put("/runding/:id", auth, uploadLogo("logo_form"), async (req, res) => {
+router.put("/runding/:id", auth, uploadLogo("logo_form"), putStoreImage, async (req, res) => {
   try {
     const { id } = req.params;
     const { subject_form, deskripsi_form } = req.body;
-    const url = req.protocol + "://" + req.get("host");
-    const getRunding = await Runding.findOne({
+    let url = undefined;
+    if(req.imageURL){
+      url = req.imageURL;
+    }
+    /*const getRunding = await Runding.findOne({
       _id: mongoose.Types.ObjectId(id),
     });
     const filenames = fs.readdirSync(path.join(__dirname, "../images"));
@@ -194,12 +201,12 @@ router.put("/runding/:id", auth, uploadLogo("logo_form"), async (req, res) => {
       ) {
         fs.unlinkSync(path.join(__dirname, "../images/", file));
       }
-    });
+    });*/
 
     await Runding.updateOne(
       { _id: mongoose.Types.ObjectId(id) },
       {
-        logo_grup: url + "/images/" + req.file.filename,
+        logo_grup: url,
         subject: subject_form,
         deskripsi: deskripsi_form,
       }
