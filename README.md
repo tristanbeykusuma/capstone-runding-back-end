@@ -83,7 +83,7 @@ Headers : <br />
 Content-Type: application/json<br />
 auth-token: token (string type) <br />
 Body :<br />
-form-data (subject_form: string, deskripsi_form: string, logo_form: file(image))
+form-data (subject_form: string, deskripsi_form: string, logo_form: file(image)) <br />
 Response : <br />
 {   "status": "ok",
     "message": "new group created"
