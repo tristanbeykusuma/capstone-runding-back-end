@@ -78,7 +78,7 @@ Response : <br />
 
 - Create Ruang Diskusi : <br />
 URL: "http://localhost:8080/runding/ceate" <br />
-Method: POS <br />
+Method: POST <br />
 Headers : <br />
 Content-Type: application/json<br />
 auth-token: token (string type) <br />
