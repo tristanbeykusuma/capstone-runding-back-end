@@ -3,16 +3,14 @@ const cookieSession = require("cookie-session");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const multer = require("multer");
-const cors = require('cors');
+const cors = require("cors");
+const path = require("path");  
 
 //routes
 const Routes = require("./routes/route");
 
 const User = require("./model/user");
 const Runding = require("./model/runding");
-
-const { GridFsStorage } = require("multer-gridfs-storage");
 
 // Middleware untuk autentikasi sebelum akses kelas, klo blm login akan di redirect ke /user/login
 const auth = require("./middleware/auth");
@@ -42,22 +40,9 @@ mongoose
     process.exit();
   });
 
-//creating bucket ()
-// let bucket;
-// mongoose.connection.on("connected", () => {
-//   var db = mongoose.connections[0].db;
-//   bucket = new mongoose.mongo.GridFSBucket(db, {
-//     bucketName: "images",
-//   });
-//   console.log(bucket);
-// });
-
-// app.get("/", (req, res) => {
-//   res.json({ message: "Welcome to the application." });
-// });
-
 //route middleware
-app.use('/', Routes);
+app.use("/", Routes);
+app.use("/images", express.static(path.join("src/images")));  
 
 //menjalankan server pada port 8080
 const PORT = process.env.PORT || 8080;

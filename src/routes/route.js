@@ -2,9 +2,13 @@ const router = require("express").Router();
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const multer = require("multer");
+const fs = require("fs");
+const path = require("path");
 
 const auth = require("../middleware/auth");
+const { uploadLogo } = require("../middleware/uploadLogo");
+const { storeImage } = require('../middleware/storeImage');
+const { putStoreImage } = require('../middleware/putStoreImage');
 
 const User = require("../model/user");
 const Runding = require("../model/runding");
@@ -18,7 +22,7 @@ const JWT_SECRET =
 
 //mendapatkan list user dari database runding_database
 router.get("/user/userList", async (req, res) => {
-  const token = req.header('auth-token');
+  const token = req.header("auth-token");
 
   try {
     const user = jwt.verify(token, JWT_SECRET);
@@ -26,7 +30,7 @@ router.get("/user/userList", async (req, res) => {
 
     const findUser = await User.findOne({ username }).lean();
 
-    if (!(findUser.username=='admin')) {
+    if (!(findUser.username == "admin")) {
       return res.json({ status: "error", error: "Access denied" });
     }
 
@@ -45,15 +49,14 @@ router.get("/user/userList", async (req, res) => {
 });
 
 //mendapatkan contoh data, hanya dapat direquest dengan request yang berisi body json web token hasil login
-router.get("/getExampleData",auth, async (req, res) => {
-
+router.get("/getExampleData", auth, async (req, res) => {
   try {
     res.json({
       status: "ok",
       data: { kelas: ["kelasdiskusi1", "kelasdiskusi2"] },
     });
   } catch (error) {
-      res.json({ status: "error", error: error.response });
+    res.json({ status: "error", error: error.response });
   }
 });
 
@@ -84,12 +87,12 @@ router.post("/user/login", async (req, res) => {
 //melakukan register user baru dan menambahkannya pada database runding_database
 router.post("/user/register", async (req, res) => {
   const { username, email, password: plainTextPassword } = req.body;
-  const re =  /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+  const re = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 
   if (!username || typeof username !== "string") {
     return res.json({ status: "error", error: "Invalid username" });
   }
-  
+
   if (!email || !re.test(email)) {
     return res.json({ status: "error", error: "Invalid email" });
   }
@@ -145,38 +148,65 @@ router.get("/runding/:id", auth, async (req, res) => {
   }
 });
 
-router.post("/runding/create", auth, async (req, res) => {
-  try {
-    const { logo_form, subject_form, deskripsi_form } = req.body;
-    let class_id;
-    await Runding.create({
-      logo_grup: logo_form,
-      subject: subject_form,
-      deskripsi: deskripsi_form,
-      administrator: [req.userloggedIn.id],
-    }).then(kelas => class_id=kelas._id);
+router.post(
+  "/runding/create",
+  auth,
+  uploadLogo("logo_form"),
+  storeImage,
+  async (req, res) => {
+    try {
+      const { subject_form, deskripsi_form } = req.body;
+      /*const url = req.protocol + "://" + req.get("host");*/
+      const url = req.imageURL;
+      const newRunding = await Runding.create({
+        logo_grup: url,
+        subject: subject_form,
+        deskripsi: deskripsi_form,
+        administrator: [req.userloggedIn.id],
+      })
+        
+      const class_id = newRunding._id;
 
-    await User.updateOne(
-      { _id: req.userloggedIn.id },
-      {
-        $push: { kelas: class_id }
-      }
-    );
-
-    res.json({ status: "ok", message: "new group created" });
-  } catch (error) {
-    res.json({ status: "error", message: error });
+      await User.updateOne(
+        { _id: req.userloggedIn.id },
+        {
+          $push: { kelas: class_id },
+        }
+      );
+      res.json({ status: "ok", message: "new group created", data: newRunding });
+    } catch (error) {
+      res.json({ status: "error", message: error });
+    }
   }
-});
+);
 
-router.put("/runding/:id", auth, async (req, res) => {
+router.put("/runding/:id", auth, uploadLogo("logo_form"), putStoreImage, async (req, res) => {
   try {
     const { id } = req.params;
-    const { logo_form, subject_form, deskripsi_form } = req.body;
+    const { subject_form, deskripsi_form } = req.body;
+    let url = undefined;
+    if(req.imageURL){
+      url = req.imageURL;
+    }
+    /*const getRunding = await Runding.findOne({
+      _id: mongoose.Types.ObjectId(id),
+    });
+    const filenames = fs.readdirSync(path.join(__dirname, "../images"));
+    filenames.map((file) => {
+      if (
+        file ==
+        getRunding.logo_grup.substring(
+          getRunding.logo_grup.lastIndexOf("/") + 1
+        )
+      ) {
+        fs.unlinkSync(path.join(__dirname, "../images/", file));
+      }
+    });*/
+
     await Runding.updateOne(
       { _id: mongoose.Types.ObjectId(id) },
       {
-        logo_grup: logo_form,
+        logo_grup: url,
         subject: subject_form,
         deskripsi: deskripsi_form,
       }
@@ -190,6 +220,20 @@ router.put("/runding/:id", auth, async (req, res) => {
 router.delete("/runding/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
+    const getRunding = await Runding.findOne({
+      _id: mongoose.Types.ObjectId(id),
+    });
+    const filenames = fs.readdirSync(path.join(__dirname, "../images"));
+    filenames.map((file) => {
+      if (
+        file ==
+        getRunding.logo_grup.substring(
+          getRunding.logo_grup.lastIndexOf("/") + 1
+        )
+      ) {
+        fs.unlinkSync(path.join(__dirname, "../images/", file));
+      }
+    });
     await Runding.deleteOne({ _id: id });
     res.json({ status: "ok", message: "new group delete" });
   } catch (error) {
@@ -219,9 +263,9 @@ router.post("/posts/create/:id", auth, async (req, res) => {
       description: description_form,
       tags: tags_form,
       author: [req.userloggedIn.id],
-    })
+    });
 
-    res.json({ status: "ok", message: "new question created", data: newPost});
+    res.json({ status: "ok", message: "new question created", data: newPost });
   } catch (error) {
     res.json({ status: "error", message: error });
   }
@@ -249,11 +293,11 @@ router.post("/comments/create/:postid", auth, async (req, res) => {
       content: content_form,
       author_id: [req.userloggedIn.id],
       author_username: [req.userloggedIn.username],
-    })
+    });
 
-    res.json({ status: "ok", message: newComment});
+    res.json({ status: "ok", message: newComment });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.json({ status: "error", message: error });
   }
 });
@@ -266,13 +310,13 @@ router.put("/comments/like/:commentid", auth, async (req, res) => {
     await Comment.updateOne(
       { _id: mongoose.Types.ObjectId(commentid) },
       {
-        $push: { likes: req.userloggedIn.id }
+        $push: { likes: req.userloggedIn.id },
       }
     );
 
-    res.json({ status: "ok", message: "Comment liked"});
+    res.json({ status: "ok", message: "Comment liked" });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.json({ status: "error", message: error });
   }
 });
