@@ -75,3 +75,17 @@ Response : <br />
 {   "status": "ok",
     "data": datarunding (of id)
 }
+
+- Create Ruang Diskusi : <br />
+URL: "http://localhost:8080/runding/ceate" <br />
+Method: POS <br />
+Headers : <br />
+Content-Type: application/json<br />
+auth-token: token (string type) <br />
+Body :<br />
+form-data (subject_form: string, deskripsi_form: string, logo_form: file(image))
+Response : <br />
+{   "status": "ok",
+    "message": "new group created"
+    "data": datarunding (of id)
+}
