@@ -7,13 +7,14 @@ const path = require("path");
 
 const auth = require("../middleware/auth");
 const { uploadLogo } = require("../middleware/uploadLogo");
-const { storeImage } = require('../middleware/storeImage');
-const { putStoreImage } = require('../middleware/putStoreImage');
+const { storeImage } = require("../middleware/storeImage");
+const { putStoreImage } = require("../middleware/putStoreImage");
 
 const User = require("../model/user");
 const Runding = require("../model/runding");
 const Posts = require("../model/posts");
 const Comment = require("../model/comment");
+const Replies = require("../model/replies");
 
 /*secret token untuk json web token, hasil token yang di encode dengan base64 akan
 diberikan ke client yang melakukan login*/
@@ -163,8 +164,8 @@ router.post(
         subject: subject_form,
         deskripsi: deskripsi_form,
         administrator: [req.userloggedIn.id],
-      })
-        
+      });
+
       const class_id = newRunding._id;
 
       await User.updateOne(
@@ -173,67 +174,63 @@ router.post(
           $push: { kelas: class_id },
         }
       );
-      res.json({ status: "ok", message: "new group created", data: newRunding });
+      res.json({
+        status: "ok",
+        message: "new group created",
+        data: newRunding,
+      });
     } catch (error) {
       res.json({ status: "error", message: error });
     }
   }
 );
 
-router.put("/runding/:id", auth, uploadLogo("logo_form"), putStoreImage, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { subject_form, deskripsi_form } = req.body;
-    let url = undefined;
-    if(req.imageURL){
-      url = req.imageURL;
-    }
-    /*const getRunding = await Runding.findOne({
-      _id: mongoose.Types.ObjectId(id),
-    });
-    const filenames = fs.readdirSync(path.join(__dirname, "../images"));
-    filenames.map((file) => {
-      if (
-        file ==
-        getRunding.logo_grup.substring(
-          getRunding.logo_grup.lastIndexOf("/") + 1
-        )
-      ) {
-        fs.unlinkSync(path.join(__dirname, "../images/", file));
+router.put(
+  "/runding/:id",
+  auth,
+  uploadLogo("logo_form"),
+  putStoreImage,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { subject_form, deskripsi_form } = req.body;
+      let url = undefined;
+      if (req.imageURL) {
+        url = req.imageURL;
       }
-    });*/
 
-    await Runding.updateOne(
-      { _id: mongoose.Types.ObjectId(id) },
-      {
-        logo_grup: url,
-        subject: subject_form,
-        deskripsi: deskripsi_form,
-      }
-    );
-    res.json({ status: "ok", message: "new group updated" });
-  } catch (error) {
-    res.json({ status: "error", message: error });
+      await Runding.updateOne(
+        { _id: mongoose.Types.ObjectId(id) },
+        {
+          logo_grup: url,
+          subject: subject_form,
+          deskripsi: deskripsi_form,
+        }
+      );
+      res.json({ status: "ok", message: "new group updated" });
+    } catch (error) {
+      res.json({ status: "error", message: error });
+    }
   }
-});
+);
 
 router.delete("/runding/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
-    const getRunding = await Runding.findOne({
-      _id: mongoose.Types.ObjectId(id),
-    });
-    const filenames = fs.readdirSync(path.join(__dirname, "../images"));
-    filenames.map((file) => {
-      if (
-        file ==
-        getRunding.logo_grup.substring(
-          getRunding.logo_grup.lastIndexOf("/") + 1
-        )
-      ) {
-        fs.unlinkSync(path.join(__dirname, "../images/", file));
-      }
-    });
+    // const getRunding = await Runding.findOne({
+    //   _id: mongoose.Types.ObjectId(id),
+    // });
+    // const filenames = fs.readdirSync(path.join(__dirname, "../images"));
+    // filenames.map((file) => {
+    //   if (
+    //     file ==
+    //     getRunding.logo_grup.substring(
+    //       getRunding.logo_grup.lastIndexOf("/") + 1
+    //     )
+    //   ) {
+    //     fs.unlinkSync(path.join(__dirname, "../images/", file));
+    //   }
+    // });
     await Runding.deleteOne({ _id: id });
     res.json({ status: "ok", message: "new group delete" });
   } catch (error) {
@@ -315,6 +312,117 @@ router.put("/comments/like/:commentid", auth, async (req, res) => {
     );
 
     res.json({ status: "ok", message: "Comment liked" });
+  } catch (error) {
+    console.log(error);
+    res.json({ status: "error", message: error });
+  }
+});
+
+router.delete("/comments/:commentid", auth, async (req, res) => {
+  try {
+    const { commentid } = req.params;
+    await Comment.deleteOne({ _id: mongoose.Types.ObjectId(commentid) });
+
+    res.json({ status: "ok", message: "Comment Deleted" });
+  } catch (error) {
+    console.log(error);
+    res.json({ status: "error", message: error });
+  }
+});
+
+// Replies Route
+router.get("/comments/reply/:commentid", auth, async (req, res) => {
+  try {
+    const { commentid } = req.params;
+    const replies = await Replies.find({ comment_id: commentid });
+    if (!replies) {
+      return res.status(404).send("Comment doesn't exists");
+    }
+
+    res.json({ status: "ok", data: replies });
+  } catch (error) {
+    console.log(error);
+    res.json({ status: "error", message: error });
+  }
+});
+
+router.post("/comments/reply/:commentid", auth, async (req, res) => {
+  try {
+    const { commentid } = req.params;
+    const { content_form } = req.body;
+
+    const newReplies = await Replies.create({
+      comment_id: mongoose.Types.ObjectId(commentid),
+      content: content_form,
+      author_id: [req.userloggedIn.id],
+      author_username: [req.userloggedIn.username],
+    });
+
+    await Comment.updateOne(
+      { _id: commentid },
+      {
+        $push: { replies: newReplies._id },
+      }
+    );
+
+    res.json({ status: "ok", message: newReplies });
+  } catch (error) {
+    console.log(error);
+    res.json({ status: "error", message: error });
+  }
+});
+
+router.put("/comments/reply/edit/:replyId", auth, async (req, res) => {
+  try {
+    const { replyId } = req.params;
+    const { content_form } = req.body;
+
+    await Replies.updateOne(
+      { _id: mongoose.Types.ObjectId(replyId) },
+      { content: content_form }
+    );
+
+    res.json({ status: "ok", message: "Reply Edited" });
+  } catch (error) {
+    console.log(error);
+    res.json({ status: "error", message: error });
+  }
+});
+
+router.put("/comments/reply/like/:replyId", auth, async (req, res) => {
+  try {
+    const { replyId } = req.params;
+    const replyLike = await Replies.findOne({ _id: replyId });
+    if (!replyLike) return res.status(400).send("reply doesn't exists");
+    await Replies.updateOne(
+      { _id: mongoose.Types.ObjectId(replyId) },
+      {
+        $push: { likes: req.userloggedIn.id },
+      }
+    );
+
+    res.json({ status: "ok", message: "Comment liked" });
+  } catch (error) {
+    console.log(error);
+    res.json({ status: "error", message: error });
+  }
+});
+
+router.delete("/comments/reply/delete/:replyId", auth, async (req, res) => {
+  try {
+    const { replyId } = req.params;
+    await Replies.deleteOne({ _id: mongoose.Types.ObjectId(replyId) }).then(
+      async () => {
+        await Comment.updateOne(
+          { _id: commentid },
+          {
+            $pull: { replies: replyId },
+          }
+        );
+      }
+    );
+
+    res.json({ status: "ok", message: "Reply Deleted" });
   } catch (error) {
     console.log(error);
     res.json({ status: "error", message: error });
