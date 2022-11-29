@@ -5,9 +5,10 @@ const CommentSchema = new mongoose.Schema(
   {
     post_id: { type: mongoose.Schema.Types.ObjectId, ref: "PostsSchema" },
     content: { type: String, required: true },
-    likes: { type: [mongoose.Schema.Types.ObjectId], ref: "UserSchema", },
-    author_id: [{type: mongoose.Schema.Types.ObjectId, ref: "UserSchema"}],
-    author_username: [{type: String}],
+    likes: { type: [mongoose.Schema.Types.ObjectId], ref: "UserSchema" },
+    author_id: [{ type: mongoose.Schema.Types.ObjectId, ref: "UserSchema" }],
+    author_username: [{ type: String }],
+    replies: [{ type: mongoose.Schema.Types.ObjectId, ref: "RepliesSchema" }],
   },
   { collection: "comments", timestamps: true }
 );
