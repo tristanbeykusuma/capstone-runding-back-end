@@ -268,6 +268,40 @@ router.post("/posts/create/:id", auth, async (req, res) => {
   }
 });
 
+router.put("/posts/:id", auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title_form, description_form, tags_form } = req.body;
+    const newPost = await Posts.updateOne(
+      {
+        _id: mongoose.Types.ObjectId(id),
+      },
+      {
+        title: title_form,
+        description: description_form,
+        tags: tags_form,
+      }
+    );
+
+    res.json({ status: "ok", message: "new question created", data: newPost });
+  } catch (error) {
+    res.json({ status: "error", message: error });
+  }
+});
+
+router.delete("/posts/:id", auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Posts.deleteOne({
+      _id: mongoose.Types.ObjectId(id),
+    });
+
+    res.json({ status: "ok", message: "new question created", data: newPost });
+  } catch (error) {
+    res.json({ status: "error", message: error });
+  }
+});
+
 // Comments Route
 
 router.get("/posts/comments/:postid", auth, async (req, res) => {
