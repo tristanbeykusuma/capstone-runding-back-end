@@ -9,7 +9,7 @@ const RepliesSchema = new mongoose.Schema(
     author_id: [{type: mongoose.Schema.Types.ObjectId, ref: "UserSchema"}],
     author_username: [{type: String}],
   },
-  { collection: "Replies", timestamps: true }
+  { collection: "replies", timestamps: true }
 );
 
 const Replies = mongoose.model("RepliesSchema", RepliesSchema);

@@ -20,6 +20,7 @@ const User = require("../model/user");
 const Runding = require("../model/runding");
 const Posts = require("../model/posts");
 const Comment = require("../model/comment");
+const Replies = require("../model/replies");
 
 /*secret token untuk json web token, hasil token yang di encode dengan base64 akan
 diberikan ke client yang melakukan login*/
@@ -358,11 +359,11 @@ router.post("/posts/comments/create/:postid", auth, verifyCommenter, async (req,
   }
 });
 
-router.post("/comment/like/:commentid", auth, commentLiked, async (req, res) => {
+router.post("/comments/like/:commentid", auth, commentLiked, async (req, res) => {
   try {
     const { commentid } = req.params;
     const commentLike = await Comment.findOne({ _id: commentid });
-    if (!commentLike) return res.status(400).send("reply doesn't exists");
+    if (!commentLike) return res.status(400).send("Comment doesn't exists");
     await Comment.updateOne(
       { _id: mongoose.Types.ObjectId(commentid) },
       {
@@ -370,14 +371,14 @@ router.post("/comment/like/:commentid", auth, commentLiked, async (req, res) => 
       }
     );
 
-    res.json({ status: "ok", message: "Comment/reply liked" });
+    res.json({ status: "ok", message: "Comment liked" });
   } catch (error) {
     console.log(error);
     res.json({ status: "error", message: error });
   }
 });
 
-router.delete("/comment/:commentid", auth, verifyCommentAuthor, async (req, res) => {
+router.delete("/comments/:commentid", auth, verifyCommentAuthor, async (req, res) => {
   try {
     const { commentid } = req.params;
     await Comment.deleteOne({ _id: mongoose.Types.ObjectId(commentid) });
@@ -389,7 +390,7 @@ router.delete("/comment/:commentid", auth, verifyCommentAuthor, async (req, res)
   }
 });
 
-router.put("/comment/:commentid", auth, verifyCommentAuthor, async (req, res) => {
+router.put("/comments/:commentid", auth, verifyCommentAuthor, async (req, res) => {
   try {
     const { commentid } = req.params;
     const { content_form } = req.body;
@@ -399,7 +400,91 @@ router.put("/comment/:commentid", auth, verifyCommentAuthor, async (req, res) =>
       { content: content_form }
     );
 
-    res.json({ status: "ok", message: "Comment/reply Edited" });
+    res.json({ status: "ok", message: "Comment Edited" });
+  } catch (error) {
+    console.log(error);
+    res.json({ status: "error", message: error });
+  }
+});
+
+// Replies Route
+
+router.get("/comments/reply/:commentid", auth, async (req, res) => {
+  try {
+    const { commentid } = req.params;
+    const replies = await Replies.find({ comment_id: commentid });
+    if (!replies) {
+      return res.status(404).send("Comment doesn't exists");
+    }
+
+    res.json({ status: "ok", data: replies });
+  } catch (error) {
+    console.log(error);
+    res.json({ status: "error", message: error });
+  }
+});
+
+router.post("/comments/reply/:commentid", auth, async (req, res) => {
+  try {
+    const { commentid } = req.params;
+    const { content_form } = req.body;
+
+    const newReplies = await Replies.create({
+      comment_id: mongoose.Types.ObjectId(commentid),
+      content: content_form,
+      author_id: [req.userloggedIn.id],
+      author_username: [req.userloggedIn.username],
+    });
+
+    res.json({ status: "ok", message: newReplies });
+  } catch (error) {
+    console.log(error);
+    res.json({ status: "error", message: error });
+  }
+});
+
+router.put("/comments/reply/edit/:replyId", auth, async (req, res) => {
+  try {
+    const { replyId } = req.params;
+    const { content_form } = req.body;
+
+    await Replies.updateOne(
+      { _id: mongoose.Types.ObjectId(replyId) },
+      { content: content_form }
+    );
+
+    res.json({ status: "ok", message: "Reply Edited" });
+  } catch (error) {
+    console.log(error);
+    res.json({ status: "error", message: error });
+  }
+});
+
+router.put("/comments/reply/like/:replyId", auth, async (req, res) => {
+  try {
+    const { replyId } = req.params;
+    const replyLike = await Replies.findOne({ _id: replyId });
+    if (!replyLike) return res.status(400).send("reply doesn't exists");
+    await Replies.updateOne(
+      { _id: mongoose.Types.ObjectId(replyId) },
+      {
+        $push: { likes: req.userloggedIn.id },
+      }
+    );
+
+    res.json({ status: "ok", message: "Comment liked" });
+  } catch (error) {
+    console.log(error);
+    res.json({ status: "error", message: error });
+  }
+});
+
+router.delete("/comments/reply/delete/:replyId", auth, async (req, res) => {
+  try {
+    const { replyId } = req.params;
+    await Replies.deleteOne({ _id: mongoose.Types.ObjectId(replyId) })
+
+    res.json({ status: "ok", message: "Reply Deleted" });
   } catch (error) {
     console.log(error);
     res.json({ status: "error", message: error });
