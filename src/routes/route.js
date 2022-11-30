@@ -9,12 +9,17 @@ const auth = require("../middleware/auth");
 const { uploadLogo } = require("../middleware/uploadLogo");
 const { storeImage } = require("../middleware/storeImage");
 const { putStoreImage } = require("../middleware/putStoreImage");
+const verifyUser = require("../middleware/verifyUser");
+const verifyAdmin = require("../middleware/verifyAdmin");
+const verifyPost = require("../middleware/verifyPost");
+const verifyCommenter = require("../middleware/verifyCommenter");
+const verifyCommentAuthor = require("../middleware/verifyCommentAuthor");
+const commentLiked = require("../middleware/commentLiked");
 
 const User = require("../model/user");
 const Runding = require("../model/runding");
 const Posts = require("../model/posts");
 const Comment = require("../model/comment");
-const Replies = require("../model/replies");
 
 /*secret token untuk json web token, hasil token yang di encode dengan base64 akan
 diberikan ke client yang melakukan login*/
@@ -61,7 +66,8 @@ router.get("/getExampleData", auth, async (req, res) => {
   }
 });
 
-//melakukan login, jika berhasil mengirim repsonse json web token reusable
+//Login Route
+
 router.post("/user/login", async (req, res) => {
   const { username, password } = req.body;
   const user = await User.findOne({ username }).lean();
@@ -85,7 +91,8 @@ router.post("/user/login", async (req, res) => {
   res.json({ status: "error", error: "Invalid username/password" });
 });
 
-//melakukan register user baru dan menambahkannya pada database runding_database
+// Register User Route
+
 router.post("/user/register", async (req, res) => {
   const { username, email, password: plainTextPassword } = req.body;
   const re = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
@@ -143,7 +150,7 @@ router.get("/runding/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
     const dataRunding = await Runding.findOne({ _id: id });
-    res.json({ status: "ok", data: dataRunding });
+    res.json({ status: "ok", message: "these are the group details", data: dataRunding });
   } catch (error) {
     res.json({ status: "error", error: error.response });
   }
@@ -171,9 +178,12 @@ router.post(
       await User.updateOne(
         { _id: req.userloggedIn.id },
         {
-          $push: { kelas: class_id },
+          $push: { adminkelas: class_id },
         }
       );
+
+      const io = req.app.get('socketio');
+      io.emit('new_group', `New Runding Created!!\n http://shiny-taiyaki-bddd2f.netlify.app/ruangdiskusi/${class_id}`);
       res.json({
         status: "ok",
         message: "new group created",
@@ -188,6 +198,7 @@ router.post(
 router.put(
   "/runding/:id",
   auth,
+  verifyUser,
   uploadLogo("logo_form"),
   putStoreImage,
   async (req, res) => {
@@ -207,14 +218,14 @@ router.put(
           deskripsi: deskripsi_form,
         }
       );
-      res.json({ status: "ok", message: "new group updated" });
+      res.json({ status: "ok", message: "group updated", member: true });
     } catch (error) {
       res.json({ status: "error", message: error });
     }
   }
 );
 
-router.delete("/runding/:id", auth, async (req, res) => {
+router.delete("/runding/:id", auth, verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     // const getRunding = await Runding.findOne({
@@ -231,8 +242,12 @@ router.delete("/runding/:id", auth, async (req, res) => {
     //     fs.unlinkSync(path.join(__dirname, "../images/", file));
     //   }
     // });
-    await Runding.deleteOne({ _id: id });
-    res.json({ status: "ok", message: "new group delete" });
+    const deleted = await Runding.deleteOne({ _id: id });
+    if(!deleted.deletedCount) {
+      res.json({ status: "ok", message: "no group found" });
+      return;
+    }
+    res.json({ status: "ok", message: "group deleted" });
   } catch (error) {
     res.json({ status: "error", message: error });
   }
@@ -250,7 +265,7 @@ router.get("/runding/posts/:id", auth, async (req, res) => {
   }
 });
 
-router.post("/posts/create/:id", auth, async (req, res) => {
+router.post("/runding/posts/create/:id", auth, verifyUser, async (req, res) => {
   try {
     const { id } = req.params;
     const { title_form, description_form, tags_form } = req.body;
@@ -262,19 +277,19 @@ router.post("/posts/create/:id", auth, async (req, res) => {
       author: [req.userloggedIn.id],
     });
 
-    res.json({ status: "ok", message: "new question created", data: newPost });
+    res.json({ status: "ok", message: "new question/post created", data: newPost });
   } catch (error) {
     res.json({ status: "error", message: error });
   }
 });
 
-router.put("/posts/:id", auth, async (req, res) => {
+router.put("/posts/:postid", auth, verifyPost, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { postid } = req.params;
     const { title_form, description_form, tags_form } = req.body;
     const newPost = await Posts.updateOne(
       {
-        _id: mongoose.Types.ObjectId(id),
+        _id: mongoose.Types.ObjectId(postid),
       },
       {
         title: title_form,
@@ -283,20 +298,20 @@ router.put("/posts/:id", auth, async (req, res) => {
       }
     );
 
-    res.json({ status: "ok", message: "new question created", data: newPost });
+    res.json({ status: "ok", message: "post updated", member: true, data: newPost });
   } catch (error) {
     res.json({ status: "error", message: error });
   }
 });
 
-router.delete("/posts/:id", auth, async (req, res) => {
+router.delete("/posts/:postid", auth, verifyPost, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { postid } = req.params;
     await Posts.deleteOne({
-      _id: mongoose.Types.ObjectId(id),
+      _id: mongoose.Types.ObjectId(postid),
     });
 
-    res.json({ status: "ok", message: "new question created", data: newPost });
+    res.json({ status: "ok", message: "question deleted", member: true });
   } catch (error) {
     res.json({ status: "error", message: error });
   }
@@ -315,16 +330,26 @@ router.get("/posts/comments/:postid", auth, async (req, res) => {
   }
 });
 
-router.post("/comments/create/:postid", auth, async (req, res) => {
+router.post("/posts/comments/create/:postid", auth, verifyCommenter, async (req, res) => {
   try {
     const { postid } = req.params;
     const { content_form } = req.body;
+    const postComment = await Posts.findOne({ _id: postid }).lean();
+    const rundingId = postComment.runding_id.toString();
     const newComment = await Comment.create({
       post_id: mongoose.Types.ObjectId(postid),
+      runding_id: mongoose.Types.ObjectId(rundingId),
       content: content_form,
       author_id: [req.userloggedIn.id],
       author_username: [req.userloggedIn.username],
     });
+
+    await Posts.updateOne(
+      { _id: mongoose.Types.ObjectId(postid) },
+      {
+        $push: { replies: newComment._id },
+      }
+    );
 
     res.json({ status: "ok", message: newComment });
   } catch (error) {
@@ -333,7 +358,7 @@ router.post("/comments/create/:postid", auth, async (req, res) => {
   }
 });
 
-router.put("/comments/like/:commentid", auth, async (req, res) => {
+router.post("/comment/like/:commentid", auth, commentLiked, async (req, res) => {
   try {
     const { commentid } = req.params;
     const commentLike = await Comment.findOne({ _id: commentid });
@@ -345,14 +370,14 @@ router.put("/comments/like/:commentid", auth, async (req, res) => {
       }
     );
 
-    res.json({ status: "ok", message: "Comment liked" });
+    res.json({ status: "ok", message: "Comment/reply liked" });
   } catch (error) {
     console.log(error);
     res.json({ status: "error", message: error });
   }
 });
 
-router.delete("/comments/:commentid", auth, async (req, res) => {
+router.delete("/comment/:commentid", auth, verifyCommentAuthor, async (req, res) => {
   try {
     const { commentid } = req.params;
     await Comment.deleteOne({ _id: mongoose.Types.ObjectId(commentid) });
@@ -364,99 +389,17 @@ router.delete("/comments/:commentid", auth, async (req, res) => {
   }
 });
 
-// Replies Route
-router.get("/comments/reply/:commentid", auth, async (req, res) => {
-  try {
-    const { commentid } = req.params;
-    const replies = await Replies.find({ comment_id: commentid });
-    if (!replies) {
-      return res.status(404).send("Comment doesn't exists");
-    }
-
-    res.json({ status: "ok", data: replies });
-  } catch (error) {
-    console.log(error);
-    res.json({ status: "error", message: error });
-  }
-});
-
-router.post("/comments/reply/:commentid", auth, async (req, res) => {
+router.put("/comment/:commentid", auth, verifyCommentAuthor, async (req, res) => {
   try {
     const { commentid } = req.params;
     const { content_form } = req.body;
-
-    const newReplies = await Replies.create({
-      comment_id: mongoose.Types.ObjectId(commentid),
-      content: content_form,
-      author_id: [req.userloggedIn.id],
-      author_username: [req.userloggedIn.username],
-    });
 
     await Comment.updateOne(
-      { _id: commentid },
-      {
-        $push: { replies: newReplies._id },
-      }
-    );
-
-    res.json({ status: "ok", message: newReplies });
-  } catch (error) {
-    console.log(error);
-    res.json({ status: "error", message: error });
-  }
-});
-
-router.put("/comments/reply/edit/:replyId", auth, async (req, res) => {
-  try {
-    const { replyId } = req.params;
-    const { content_form } = req.body;
-
-    await Replies.updateOne(
-      { _id: mongoose.Types.ObjectId(replyId) },
+      { _id: mongoose.Types.ObjectId(commentid) },
       { content: content_form }
     );
 
-    res.json({ status: "ok", message: "Reply Edited" });
-  } catch (error) {
-    console.log(error);
-    res.json({ status: "error", message: error });
-  }
-});
-
-router.put("/comments/reply/like/:replyId", auth, async (req, res) => {
-  try {
-    const { replyId } = req.params;
-    const replyLike = await Replies.findOne({ _id: replyId });
-    if (!replyLike) return res.status(400).send("reply doesn't exists");
-    await Replies.updateOne(
-      { _id: mongoose.Types.ObjectId(replyId) },
-      {
-        $push: { likes: req.userloggedIn.id },
-      }
-    );
-
-    res.json({ status: "ok", message: "Comment liked" });
-  } catch (error) {
-    console.log(error);
-    res.json({ status: "error", message: error });
-  }
-});
-
-router.delete("/comments/reply/delete/:replyId", auth, async (req, res) => {
-  try {
-    const { replyId } = req.params;
-    await Replies.deleteOne({ _id: mongoose.Types.ObjectId(replyId) }).then(
-      async () => {
-        await Comment.updateOne(
-          { _id: commentid },
-          {
-            $pull: { replies: replyId },
-          }
-        );
-      }
-    );
-
-    res.json({ status: "ok", message: "Reply Deleted" });
+    res.json({ status: "ok", message: "Comment/reply Edited" });
   } catch (error) {
     console.log(error);
     res.json({ status: "error", message: error });

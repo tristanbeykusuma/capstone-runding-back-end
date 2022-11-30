@@ -8,24 +8,28 @@ const JWT_SECRET =
 
 module.exports = async (req, res, next) => {
   const token = req.header('auth-token');
+  const { id: runding_id } = req.params;
 
   try {
     const user = jwt.verify(token, JWT_SECRET);
-    const username = user.username;
+    const _id = user.id;
 
-    const findUser = await User.findOne({ username }).lean();
+    const findUser = await User.findOne({ _id }).lean();
+    const adminKelas = findUser.adminkelas?.toString() || '' ;
+    const newAdmin = adminKelas.split(",");
 
-    if (!findUser) {
-      res.status(400)
-      return res.json({ status: "error", error: "Invalid username/password" });
-    } else {
-      req.userloggedIn = { id: findUser._id, username: findUser.username };
+    const foundAdmin = newAdmin.find((str) => str === runding_id)
+
+    if (foundAdmin) {
       next();
+    } else {
+      return res.json({ status: "error", mesage: "you are not admin of this group", member: false, data: {} });
     }
   } catch (error) {
+    console.log(error);
     if (error.message === "jwt malformed" || "invalid token") {
+      res.status(400)
       res.json({ status: "error", error: ";))" });
-      console.log(token + "has accessed the database (not a user)");
     } else {
       res.json({ status: "error", error: ";))" });
     }

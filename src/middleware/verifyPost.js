@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const User = require("../model/user");
+const Posts = require("../model/posts");
 
 /*secret token untuk json web token, hasil token yang di encode dengan base64 akan
 diberikan ke client yang melakukan login*/
@@ -8,24 +8,24 @@ const JWT_SECRET =
 
 module.exports = async (req, res, next) => {
   const token = req.header('auth-token');
+  const { postid: post_id } = req.params;
 
   try {
     const user = jwt.verify(token, JWT_SECRET);
-    const username = user.username;
+    const author = user.id;
 
-    const findUser = await User.findOne({ username }).lean();
+    const foundPost = await Posts.find({ author, _id: post_id}).lean();
 
-    if (!findUser) {
-      res.status(400)
-      return res.json({ status: "error", error: "Invalid username/password" });
-    } else {
-      req.userloggedIn = { id: findUser._id, username: findUser.username };
+    if (foundPost) {
       next();
+    } else {
+      return res.json({ status: "error", mesage: "you are not creator of post", member: false, data: {} });
     }
   } catch (error) {
+    console.log(error);
     if (error.message === "jwt malformed" || "invalid token") {
+      res.status(400)
       res.json({ status: "error", error: ";))" });
-      console.log(token + "has accessed the database (not a user)");
     } else {
       res.json({ status: "error", error: ";))" });
     }

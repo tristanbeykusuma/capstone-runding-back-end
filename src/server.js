@@ -1,19 +1,12 @@
 const express = require("express");
-const cookieSession = require("cookie-session");
 const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const cors = require("cors");
-const path = require("path");  
+const path = require("path"); 
+const { Server } = require("socket.io"); 
+const authSocket = require("./middleware/authSocket");
 
 //routes
 const Routes = require("./routes/route");
-
-const User = require("./model/user");
-const Runding = require("./model/runding");
-
-// Middleware untuk autentikasi sebelum akses kelas, klo blm login akan di redirect ke /user/login
-const auth = require("./middleware/auth");
 
 const app = express();
 
@@ -46,6 +39,33 @@ app.use("/images", express.static(path.join("src/images")));
 
 //menjalankan server pada port 8080
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });
+
+//sockets for live chat
+const io = new Server(server);
+
+io.use(async (socket, next) => {
+  const token = socket.handshake.headers.auth;
+  if (await authSocket(token)) {
+    next();
+  } else {
+    socket.disconnect();
+    console.log('user disconnected');
+    next(new Error("invalid"));
+  }
+});
+
+io.on('connection', (socket) => {
+  console.log('a user connected : ', socket.id);
+  socket.on('chat_message', (msg) => {
+    console.log('message: ' + msg);
+    io.emit('chat_message', msg);
+  });
+  socket.on('disconnect', () => {
+    console.log('user disconnected : ', socket.id);
+  });
+});
+
+app.set('socketio', io);
