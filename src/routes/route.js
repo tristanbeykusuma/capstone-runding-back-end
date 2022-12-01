@@ -330,6 +330,7 @@ router.put(
         { _id: mongoose.Types.ObjectId(id) },
         {
           meetLink: meeting_form,
+          meetDate: now,
           meetTime: `Meeting is going to end at ${now}`,
         }
       );
