@@ -162,7 +162,7 @@ router.get("/runding/:id", auth, async (req, res) => {
     if(memberRunding || adminRunding) {
       return res.json({ status: "ok", message: "these are the group details", member: true, data: dataRunding });
     }
-    res.json({ status: "ok", message: "these are the group details, you are not part of this group", member: false, data: { _id: dataRunding._id, subject: dataRunding.subject},});
+    res.json({ status: "ok", message: "these are the group details, you are not part of this group", member: false, data: { _id: dataRunding._id, subject: dataRunding.subject, logo_grup: dataRunding.logo_grup, deskripsi: dataRunding.deskripsi},});
   } catch (error) {
     res.json({ status: "error", error: error.response });
   }
