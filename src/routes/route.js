@@ -23,8 +23,8 @@ const Comment = require("../model/comment");
 const Replies = require("../model/replies");
 
 function selectFewerFields(dataObject){
-  const {_id, logo_grup, subject } = dataObject;
-  return {_id, logo_grup, subject};
+  const {_id, logo_grup, subject, jenisRunding } = dataObject;
+  return {_id, logo_grup, subject, jenisRunding };
 }
 
 /*secret token untuk json web token, hasil token yang di encode dengan base64 akan
@@ -97,6 +97,16 @@ router.post("/user/login", async (req, res) => {
   res.json({ status: "error", error: "Invalid username/password" });
 });
 
+router.get("/user/data", auth, async (req, res) => {
+  const user = await User.findOne({ _id: req.userloggedIn.id }).lean();
+
+  if (!user) {
+    return res.json({ status: "error", error: "You are not a registered user" });
+  }
+
+  res.json({ status: "ok", message: "Welcome user, here is your data", data: user });
+});
+
 // Register User Route
 
 router.post("/user/register", async (req, res) => {
@@ -153,6 +163,26 @@ router.get("/runding", auth, async (req, res) => {
   }
 });
 
+router.get("/runding/sortByCreated", auth, async (req, res) => {
+  try {
+    const dataRunding = await Runding.find({}).sort({"createdAt": -1 });
+    const fewerRunding = dataRunding.map(selectFewerFields);
+    res.json({ status: "ok", data: fewerRunding });
+  } catch (error) {
+    res.json({ status: "error", error: error.response });
+  }
+});
+
+router.get("/runding/sortByMembers", auth, async (req, res) => {
+  try {
+    const dataRunding = await Runding.aggregate().addFields({"length": {"$size": `$peserta`}}).sort({"length": -1 });;
+    const fewerRunding = dataRunding.map(selectFewerFields);
+    res.json({ status: "ok", data: fewerRunding });
+  } catch (error) {
+    res.json({ status: "error", error: error.response });
+  }
+});
+
 router.get("/runding/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -175,13 +205,14 @@ router.post(
   storeImage,
   async (req, res) => {
     try {
-      const { subject_form, deskripsi_form } = req.body;
+      const { subject_form, deskripsi_form, jenis_form } = req.body;
       /*const url = req.protocol + "://" + req.get("host");*/
       const url = req.imageURL;
       const newRunding = await Runding.create({
         logo_grup: url,
         subject: subject_form,
         deskripsi: deskripsi_form,
+        jenisRunding: jenis_form,
         administrator: [req.userloggedIn.id],
       });
 
@@ -216,7 +247,7 @@ router.put(
   async (req, res) => {
     try {
       const { id } = req.params;
-      const { subject_form, deskripsi_form } = req.body;
+      const { subject_form, deskripsi_form, jenis_form } = req.body;
       let url = undefined;
       if (req.imageURL) {
         url = req.imageURL;
@@ -228,6 +259,7 @@ router.put(
           logo_grup: url,
           subject: subject_form,
           deskripsi: deskripsi_form,
+          jenisRunding: jenis_form,
         }
       );
       res.json({ status: "ok", message: "group updated", member: true });
