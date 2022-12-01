@@ -8,9 +8,8 @@ global.XMLHttpRequest = require("xhr2"); // must be used to avoid bug
 const putStoreImage = async (req, res, next) => {
   if(req.file){
     try {
-        // Grab the file
         const file = req.file;
-        // Format the filename
+
         const timestamp = Date.now();
         const name = file.originalname.split(".")[0];
         const type = file.originalname.split(".")[1];

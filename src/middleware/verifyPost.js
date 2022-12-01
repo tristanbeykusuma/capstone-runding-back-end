@@ -16,7 +16,7 @@ module.exports = async (req, res, next) => {
 
     const foundPost = await Posts.find({ author, _id: post_id}).lean();
 
-    if (foundPost) {
+    if (foundPost.length != 0) {
       next();
     } else {
       return res.json({ status: "error", mesage: "you are not creator of post", member: false, data: {} });

@@ -151,7 +151,12 @@ router.get("/runding/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
     const dataRunding = await Runding.findOne({ _id: id });
-    res.json({ status: "ok", message: "these are the group details", data: dataRunding });
+    const memberRunding = await Runding.findOne({ _id: id, peserta: req.userloggedIn.id }).lean();
+    const adminRunding = await Runding.findOne({ _id: id, administrator: req.userloggedIn.id }).lean();
+    if(memberRunding || adminRunding) {
+      return res.json({ status: "ok", message: "these are the group details", member: true, data: dataRunding });
+    }
+    res.json({ status: "ok", message: "these are the group details, you are not part of this group", member: false, data: dataRunding });
   } catch (error) {
     res.json({ status: "error", error: error.response });
   }
@@ -226,6 +231,64 @@ router.put(
   }
 );
 
+router.put(
+  "/runding/join/:id",
+  auth,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const foundRunding = await Runding.find({ _id: id, peserta: req.userloggedIn.id}).lean();
+      if(foundRunding.length != 0) {
+        return res.json({ status: "error", message: "you already joined the group", member: true, data: foundRunding });
+      };
+      const dataRundingJoined = await Runding.updateOne(
+        { _id: mongoose.Types.ObjectId(id) },
+        {
+          $push: { peserta: req.userloggedIn.id },
+        }
+      );
+
+      await User.updateOne(
+        { _id: mongoose.Types.ObjectId(req.userloggedIn.id) },
+        {
+          $push: { pesertakelas: id },
+        }
+      );
+
+      res.json({ status: "ok", message: "you joined the group", member: true, data: dataRundingJoined });
+    } catch (error) {
+      res.json({ status: "error", message: error });
+    }
+  }
+);
+
+router.put(
+  "/runding/leave/:id",
+  auth,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const dataRundingLeft = await Runding.updateOne(
+        { _id: mongoose.Types.ObjectId(id) },
+        {
+          $pull: { peserta: req.userloggedIn.id },
+        }
+      );
+
+      await User.updateOne(
+        { _id: mongoose.Types.ObjectId(req.userloggedIn.id) },
+        {
+          $pull: { pesertakelas: id },
+        }
+      );
+
+      res.json({ status: "ok", message: "you left the group", member: false, data: dataRundingLeft });
+    } catch (error) {
+      res.json({ status: "error", message: error });
+    }
+  }
+);
+
 router.delete("/runding/:id", auth, verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
@@ -253,6 +316,30 @@ router.delete("/runding/:id", auth, verifyAdmin, async (req, res) => {
     res.json({ status: "error", message: error });
   }
 });
+
+router.put(
+  "/runding/newmeeting/:id",
+  auth,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { meeting_form } = req.body;
+      const now = new Date();
+      now.setHours(now.getHours() + 1);
+      const dataRundingUpdated = await Runding.updateOne(
+        { _id: mongoose.Types.ObjectId(id) },
+        {
+          meetLink: meeting_form,
+          meetTime: `Meeting is going to end at ${now}`,
+        }
+      );
+
+      res.json({ status: "ok", message: "meeting added", data: dataRundingUpdated, meetexpire: `${now}` });
+    } catch (error) {
+      res.json({ status: "error", message: error });
+    }
+  }
+);
 
 // Posts/Questions Route
 
@@ -359,7 +446,7 @@ router.post("/posts/comments/create/:postid", auth, verifyCommenter, async (req,
   }
 });
 
-router.post("/comments/like/:commentid", auth, commentLiked, async (req, res) => {
+router.put("/comments/like/:commentid", auth, commentLiked, async (req, res) => {
   try {
     const { commentid } = req.params;
     const commentLike = await Comment.findOne({ _id: commentid });
