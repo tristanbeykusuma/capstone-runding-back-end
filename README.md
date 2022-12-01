@@ -36,7 +36,7 @@ Body : {"username" : string, "password" : string} <br />
 Response : <br />
 { status: 'ok', data: token (string type)} 
 
-* Token ini merupakan string yang dapat disimpan dalam local storage <br />
+~ Token ini merupakan string yang dapat disimpan dalam local storage <br />
 
 - Get Class Data Example : <br />
 URL: "http://localhost:8080/getExampleData" <br />
@@ -54,6 +54,7 @@ Response : <br />
     }
  }
 
+~ Field jenisRunding di model Runding meliputi : Sains, Teknologi, Programming, Agrikultur, Bisnis, Kesehatan, Debat, Hiburan, Kuliner, Olahraga dan Other <br />
 - Get Daftar Semua Ruang Diskusi : <br />
 URL: "http://localhost:8080/runding" <br />
 Method: GET <br />
