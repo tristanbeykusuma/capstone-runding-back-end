@@ -6,8 +6,8 @@ diberikan ke client yang melakukan login*/
 const JWT_SECRET =
   "$2a$10$YJYHqw1XxugfTGHOWL.GSODjNJlLOfic8MWs5T8jbKxPDMDTvm5Ti";
 
-module.exports = async (req, res, next) => {
-  const token = req.header('auth-token');
+module.exports = async (authToken) => {
+  const token = authToken;
 
   try {
     const user = jwt.verify(token, JWT_SECRET);
@@ -16,18 +16,17 @@ module.exports = async (req, res, next) => {
     const findUser = await User.findOne({ username }).lean();
 
     if (!findUser) {
-      res.status(400)
-      return res.json({ status: "error", error: "Invalid username/password" });
+      return false;
     } else {
-      req.userloggedIn = { id: findUser._id, username: findUser.username };
-      next();
+      return true;
     }
   } catch (error) {
     if (error.message === "jwt malformed" || "invalid token") {
-      res.json({ status: "error", error: ";))" });
-      console.log(token + "has accessed the database (not a user)");
+      console.log("token is error");
+      return false;
     } else {
-      res.json({ status: "error", error: ";))" });
+      console.log("error");
+      return false;
     }
   }
 };

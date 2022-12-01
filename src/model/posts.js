@@ -8,6 +8,7 @@ const PostsSchema = new mongoose.Schema(
     description: { type: String, required: true },
     tags: [String],
     author: [{ type: mongoose.Schema.Types.ObjectId, ref: "UserSchema" }],
+    replies: [{ type: mongoose.Schema.Types.ObjectId, ref: "CommentSchema" }],
   },
   { collection: "posts", timestamps: true }
 );
