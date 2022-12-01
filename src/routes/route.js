@@ -22,6 +22,11 @@ const Posts = require("../model/posts");
 const Comment = require("../model/comment");
 const Replies = require("../model/replies");
 
+function selectFewerFields(dataObject){
+  const {_id, logo_grup, subject } = dataObject;
+  return {_id, logo_grup, subject};
+}
+
 /*secret token untuk json web token, hasil token yang di encode dengan base64 akan
 diberikan ke client yang melakukan login*/
 const JWT_SECRET =
@@ -141,7 +146,8 @@ router.post("/user/register", async (req, res) => {
 router.get("/runding", auth, async (req, res) => {
   try {
     const dataRunding = await Runding.find({});
-    res.json({ status: "ok", data: dataRunding });
+    const fewerRunding = dataRunding.map(selectFewerFields);
+    res.json({ status: "ok", data: fewerRunding });
   } catch (error) {
     res.json({ status: "error", error: error.response });
   }
@@ -156,7 +162,7 @@ router.get("/runding/:id", auth, async (req, res) => {
     if(memberRunding || adminRunding) {
       return res.json({ status: "ok", message: "these are the group details", member: true, data: dataRunding });
     }
-    res.json({ status: "ok", message: "these are the group details, you are not part of this group", member: false, data: dataRunding });
+    res.json({ status: "ok", message: "these are the group details, you are not part of this group", member: false, data: { _id: dataRunding._id, subject: dataRunding.subject},});
   } catch (error) {
     res.json({ status: "error", error: error.response });
   }
