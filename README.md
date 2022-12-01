@@ -54,7 +54,7 @@ Response : <br />
     }
  }
 
-~ Field jenisRunding di model Runding meliputi : Sains, Teknologi, Programming, Agrikultur, Bisnis, Kesehatan, Debat, Hiburan, dan Other <br />
+~ Field jenisRunding di model Runding meliputi : Sains, Teknologi, Programming, Agrikultur, Bisnis, Kesehatan, Debat, Hiburan, Kuliner, Olahraga dan Other <br />
 - Get Daftar Semua Ruang Diskusi : <br />
 URL: "http://localhost:8080/runding" <br />
 Method: GET <br />

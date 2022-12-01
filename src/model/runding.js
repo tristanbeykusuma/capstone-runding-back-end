@@ -15,7 +15,7 @@ const RundingSchema = new mongoose.Schema(
   },
   { collection: "rundings", timestamps: true }
 );
-//jenisRunding meliputi : Sains, Teknologi, Programming, Agrikultur, Bisnis, Kesehatan, Debat, Hiburan, Other
+//jenisRunding meliputi : Sains, Teknologi, Programming, Agrikultur, Bisnis, Kesehatan, Debat, Hiburan, Kuliner, Olahraga, Other
 
 const Runding = mongoose.model("RundingSchema", RundingSchema);
 
