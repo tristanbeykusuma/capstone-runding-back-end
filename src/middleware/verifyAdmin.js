@@ -23,15 +23,17 @@ module.exports = async (req, res, next) => {
     if (foundAdmin) {
       next();
     } else {
-      return res.json({ status: "error", mesage: "you are not admin of this group", member: false, data: {} });
+      res.status(403);
+      return res.json({ status: "error", mesage: "you are not admin of this group", author: false, data: {} });
     }
   } catch (error) {
     console.log(error);
     if (error.message === "jwt malformed" || "invalid token") {
       res.status(400)
-      res.json({ status: "error", error: ";))" });
+      res.json({ status: "error", message: "Invalid token" });
     } else {
-      res.json({ status: "error", error: ";))" });
+      res.status(500)
+      res.json({ status: "error", message: "Server error" });
     }
   }
 };

@@ -26,15 +26,17 @@ module.exports = async (req, res, next) => {
     if (foundAdmin || foundPeserta) {
       next();
     } else {
+      res.status(403);
       return res.json({ status: "error", mesage: "you are not a member of this group, please join first", member: false, data: {} });
     }
   } catch (error) {
     console.log(error);
     if (error.message === "jwt malformed" || "invalid token") {
       res.status(400)
-      res.json({ status: "error", error: ";))" });
+      res.json({ status: "error", message: "Invalid token" });
     } else {
-      res.json({ status: "error", error: ";))" });
+      res.status(500);
+      res.json({ status: "error", message: "Server error" });
     }
   }
 };

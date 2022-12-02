@@ -22,10 +22,10 @@ module.exports = async (authToken) => {
     }
   } catch (error) {
     if (error.message === "jwt malformed" || "invalid token") {
-      console.log("token is error");
+      console.log("Socket user access : token is error");
       return false;
     } else {
-      console.log("error");
+      console.log("Socket user access : error");
       return false;
     }
   }

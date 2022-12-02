@@ -43,6 +43,7 @@ router.get("/user/userList", async (req, res) => {
     const findUser = await User.findOne({ username }).lean();
 
     if (!(findUser.username == "admin")) {
+      res.status(403);
       return res.json({ status: "error", error: "Access denied" });
     }
 
@@ -51,11 +52,12 @@ router.get("/user/userList", async (req, res) => {
     });
   } catch (error) {
     if (error.message === "jwt malformed" || "invalid token") {
-      res.json({ status: "error", error: ";))" });
-      console.log(token);
+      res.status(400);
+      res.json({ status: "error", message: "Invalid token" });
     } else {
       console.log(error);
-      res.json({ status: "error", error: ";))" });
+      res.status(500);
+      res.json({ status: "error", message: "Server error" });
     }
   }
 });
@@ -68,7 +70,8 @@ router.get("/getExampleData", auth, async (req, res) => {
       data: { kelas: ["kelasdiskusi1", "kelasdiskusi2"] },
     });
   } catch (error) {
-    res.json({ status: "error", error: error.response });
+    res.status(500);
+    res.json({ status: "error", message: error });
   }
 });
 
@@ -77,34 +80,46 @@ router.get("/getExampleData", auth, async (req, res) => {
 router.post("/user/login", async (req, res) => {
   const { username, password } = req.body;
   const user = await User.findOne({ username }).lean();
+  
+  try {
+    if (!user) {
+      res.status(401);
+      return res.json({ status: "error", message: "Invalid username" });
+    }
 
-  if (!user) {
-    return res.json({ status: "error", error: "Invalid username/password" });
-  }
-
-  if (await bcrypt.compare(password, user.password)) {
-    const token = jwt.sign(
+    if (await bcrypt.compare(password, user.password)) {
+      const token = jwt.sign(
       {
         id: user._id,
         username: user.username,
       },
       JWT_SECRET
-    );
+      );
 
     return res.json({ status: "ok", data: token });
+    }
+    
+    res.status(401);
+    res.json({ status: "error", message: "Invalid password" });
+  } catch (error) {
+    res.status(500);
+    res.json({ status: "error", message: error });
   }
-
-  res.json({ status: "error", error: "Invalid username/password" });
 });
 
 router.get("/user/data", auth, async (req, res) => {
   const user = await User.findOne({ _id: req.userloggedIn.id }).lean();
-
+  
+  try {
   if (!user) {
-    return res.json({ status: "error", error: "You are not a registered user" });
+    return res.json({ status: "error", message: "You are not a registered user" });
   }
 
   res.json({ status: "ok", message: "Welcome user, here is your data", data: user });
+  } catch (error) {
+    res.status(500);
+    res.json({ status: "error", message: error });
+  }
 });
 
 // Register User Route
@@ -114,21 +129,25 @@ router.post("/user/register", async (req, res) => {
   const re = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 
   if (!username || typeof username !== "string") {
-    return res.json({ status: "error", error: "Invalid username" });
+    res.status(400);
+    return res.json({ status: "error", message: "Invalid username" });
   }
 
   if (!email || !re.test(email)) {
-    return res.json({ status: "error", error: "Invalid email" });
+    res.status(400);
+    return res.json({ status: "error", message: "Invalid email" });
   }
 
   if (!plainTextPassword || typeof plainTextPassword !== "string") {
-    return res.json({ status: "error", error: "Invalid password" });
+    res.status(400);
+    return res.json({ status: "error", message: "Invalid password" });
   }
 
   if (plainTextPassword.length < 5) {
+    res.status(400);
     return res.json({
       status: "error",
-      error: "Password too small. Should be atleast 6 characters",
+      message: "Password too small. Should be atleast 6 characters",
     });
   }
 
@@ -141,14 +160,16 @@ router.post("/user/register", async (req, res) => {
       password,
     });
     console.log("User created successfully: ", response);
+    res.status(201);
+    res.json({ status: "ok", message: "user created" });
   } catch (error) {
     if (error.code === 11000) {
-      return res.json({ status: "error", error: "Username already in use" });
+      res.status(400);
+      return res.json({ status: "error", message: "Username already in use" });
     }
-    throw error;
+    res.status(500);
+    res.json({ status: "error", message: error });
   }
-
-  res.json({ status: "ok", message: "user created" });
 });
 
 // Runding Route
@@ -159,7 +180,8 @@ router.get("/runding", auth, async (req, res) => {
     const fewerRunding = dataRunding.map(selectFewerFields);
     res.json({ status: "ok", data: fewerRunding });
   } catch (error) {
-    res.json({ status: "error", error: error.response });
+    res.status(500);
+    res.json({ status: "error", message: error });
   }
 });
 
@@ -169,17 +191,19 @@ router.get("/runding/sortByCreated", auth, async (req, res) => {
     const fewerRunding = dataRunding.map(selectFewerFields);
     res.json({ status: "ok", data: fewerRunding });
   } catch (error) {
-    res.json({ status: "error", error: error.response });
+    res.status(500);
+    res.json({ status: "error", message: error });
   }
 });
 
 router.get("/runding/sortByMembers", auth, async (req, res) => {
   try {
-    const dataRunding = await Runding.aggregate().addFields({"length": {"$size": `$peserta`}}).sort({"length": -1 });;
+    const dataRunding = await Runding.aggregate().addFields({"length": {"$size": `$peserta`}}).sort({"length": -1 });
     const fewerRunding = dataRunding.map(selectFewerFields);
     res.json({ status: "ok", data: fewerRunding });
   } catch (error) {
-    res.json({ status: "error", error: error.response });
+    res.status(500);
+    res.json({ status: "error", message: error });
   }
 });
 
@@ -189,12 +213,20 @@ router.get("/runding/:id", auth, async (req, res) => {
     const dataRunding = await Runding.findOne({ _id: id });
     const memberRunding = await Runding.findOne({ _id: id, peserta: req.userloggedIn.id }).lean();
     const adminRunding = await Runding.findOne({ _id: id, administrator: req.userloggedIn.id }).lean();
-    if(memberRunding || adminRunding) {
+    if(!dataRunding) {
+      res.status(404);
+      return res.json({ status: "error", message: "No group with that id" });
+    }
+    if(adminRunding) {
+      return res.json({ status: "ok", message: "these are the group details, you are admin", author: true, data: dataRunding });
+    }
+    if(memberRunding) {
       return res.json({ status: "ok", message: "these are the group details", member: true, data: dataRunding });
     }
-    res.json({ status: "ok", message: "these are the group details, you are not part of this group", member: false, data: { _id: dataRunding._id, subject: dataRunding.subject, logo_grup: dataRunding.logo_grup, deskripsi: dataRunding.deskripsi},});
+    res.json({ status: "ok", message: "these are the group details, you are not part of this group", member: false, data: { _id: dataRunding._id, subject: dataRunding.subject, logo_grup: dataRunding.logo_grup},});
   } catch (error) {
-    res.json({ status: "error", error: error.response });
+    res.status(500);
+    res.json({ status: "error", message: error });
   }
 });
 
@@ -227,12 +259,14 @@ router.post(
 
       const io = req.app.get('socketio');
       io.emit('new_group', `New Runding Created!!\n http://shiny-taiyaki-bddd2f.netlify.app/ruangdiskusi/${class_id}`);
+      res.status(201);
       res.json({
         status: "ok",
         message: "new group created",
         data: newRunding,
       });
     } catch (error) {
+      res.status(500);
       res.json({ status: "error", message: error });
     }
   }
@@ -241,7 +275,7 @@ router.post(
 router.put(
   "/runding/:id",
   auth,
-  verifyUser,
+  verifyAdmin,
   uploadLogo("logo_form"),
   putStoreImage,
   async (req, res) => {
@@ -262,8 +296,9 @@ router.put(
           jenisRunding: jenis_form,
         }
       );
-      res.json({ status: "ok", message: "group updated", member: true });
+      res.json({ status: "ok", message: "group updated", author: true });
     } catch (error) {
+      res.status(500);
       res.json({ status: "error", message: error });
     }
   }
@@ -277,7 +312,7 @@ router.put(
       const { id } = req.params;
       const foundRunding = await Runding.find({ _id: id, peserta: req.userloggedIn.id}).lean();
       if(foundRunding.length != 0) {
-        return res.json({ status: "error", message: "you already joined the group", member: true, data: foundRunding });
+        return res.json({ status: "redundant", message: "you already joined the group", member: true, data: foundRunding });
       };
       const dataRundingJoined = await Runding.updateOne(
         { _id: mongoose.Types.ObjectId(id) },
@@ -295,6 +330,7 @@ router.put(
 
       res.json({ status: "ok", message: "you joined the group", member: true, data: dataRundingJoined });
     } catch (error) {
+      res.status(500);
       res.json({ status: "error", message: error });
     }
   }
@@ -322,6 +358,7 @@ router.put(
 
       res.json({ status: "ok", message: "you left the group", member: false, data: dataRundingLeft });
     } catch (error) {
+      res.status(500);
       res.json({ status: "error", message: error });
     }
   }
@@ -346,11 +383,13 @@ router.delete("/runding/:id", auth, verifyAdmin, async (req, res) => {
     // });
     const deleted = await Runding.deleteOne({ _id: id });
     if(!deleted.deletedCount) {
-      res.json({ status: "ok", message: "no group found" });
+      res.status(404);
+      res.json({ status: "error", message: "no group found" });
       return;
     }
-    res.json({ status: "ok", message: "group deleted" });
+    res.json({ status: "ok", message: "group deleted", author: true});
   } catch (error) {
+    res.status(500);
     res.json({ status: "error", message: error });
   }
 });
@@ -358,6 +397,7 @@ router.delete("/runding/:id", auth, verifyAdmin, async (req, res) => {
 router.put(
   "/runding/newmeeting/:id",
   auth,
+  verifyAdmin,
   async (req, res) => {
     try {
       const { id } = req.params;
@@ -375,6 +415,7 @@ router.put(
 
       res.json({ status: "ok", message: "meeting added", data: dataRundingUpdated, meetexpire: `${now}` });
     } catch (error) {
+      res.status(500);
       res.json({ status: "error", message: error });
     }
   }
@@ -388,7 +429,20 @@ router.get("/runding/posts/:id", auth, async (req, res) => {
     const dataRundingPost = await Posts.find({ runding_id: id });
     res.json({ status: "ok", data: dataRundingPost });
   } catch (error) {
-    res.json({ status: "error", error: error.response });
+    res.status(500);
+    res.json({ status: "error", message: error });
+  }
+});
+
+router.get("/runding/posts/tags/:id", auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tag_search } = req.body;
+    const dataRundingPost = await Posts.find({ runding_id: id, tags: tag_search });
+    res.json({ status: "ok", data: dataRundingPost });
+  } catch (error) {
+    res.status(500);
+    res.json({ status: "error", message: error });
   }
 });
 
@@ -403,9 +457,10 @@ router.post("/runding/posts/create/:id", auth, verifyUser, async (req, res) => {
       tags: tags_form,
       author: [req.userloggedIn.id],
     });
-
-    res.json({ status: "ok", message: "new question/post created", data: newPost });
+    res.status(201);
+    res.json({ status: "ok", message: "new question/post created", member: true, data: newPost });
   } catch (error) {
+    res.status(500);
     res.json({ status: "error", message: error });
   }
 });
@@ -425,8 +480,9 @@ router.put("/posts/:postid", auth, verifyPost, async (req, res) => {
       }
     );
 
-    res.json({ status: "ok", message: "post updated", member: true, data: newPost });
+    res.json({ status: "ok", message: "post updated", author: true, data: newPost });
   } catch (error) {
+    res.status(500);
     res.json({ status: "error", message: error });
   }
 });
@@ -438,8 +494,9 @@ router.delete("/posts/:postid", auth, verifyPost, async (req, res) => {
       _id: mongoose.Types.ObjectId(postid),
     });
 
-    res.json({ status: "ok", message: "question deleted", member: true });
+    res.json({ status: "ok", message: "question deleted", author: true });
   } catch (error) {
+    res.status(500);
     res.json({ status: "error", message: error });
   }
 });
@@ -453,7 +510,21 @@ router.get("/posts/comments/:postid", auth, async (req, res) => {
     const dataRundingComments = await Comment.find({ post_id: postid });
     res.json({ status: "ok", data: {post: dataPost, comments: dataRundingComments} });
   } catch (error) {
+    res.status(500);
+    res.json({ status: "error", message: error });
+  }
+});
+
+router.get("/posts/comments/sortByLikes/:postid", auth, async (req, res) => {
+  try {
+    const { postid } = req.params;
+    const dataPost = await Posts.find({ _id: postid });
+    const dataRundingComments = await Comment.aggregate([{$match:{'post_id': mongoose.Types.ObjectId(postid)},}])
+                                .addFields({"length": {"$size": `$likes`}}).sort({"length": -1 });
+    res.json({ status: "ok", data: {post: dataPost, comments: dataRundingComments} });
+  } catch (error) {
     console.log(error);
+    res.status(500);
     res.json({ status: "error", message: error });
   }
 });
@@ -479,9 +550,10 @@ router.post("/posts/comments/create/:postid", auth, verifyCommenter, async (req,
       }
     );
 
-    res.json({ status: "ok", message: newComment });
+    res.status(201);
+    res.json({ status: "ok", message: "Comment created", member: true, data: newComment });
   } catch (error) {
-    console.log(error);
+    res.status(500);
     res.json({ status: "error", message: error });
   }
 });
@@ -500,7 +572,7 @@ router.put("/comments/like/:commentid", auth, commentLiked, async (req, res) => 
 
     res.json({ status: "ok", message: "Comment liked" });
   } catch (error) {
-    console.log(error);
+    res.status(500);
     res.json({ status: "error", message: error });
   }
 });
@@ -510,9 +582,9 @@ router.delete("/comments/:commentid", auth, verifyCommentAuthor, async (req, res
     const { commentid } = req.params;
     await Comment.deleteOne({ _id: mongoose.Types.ObjectId(commentid) });
 
-    res.json({ status: "ok", message: "Comment Deleted" });
+    res.json({ status: "ok", message: "Comment Deleted", author: true });
   } catch (error) {
-    console.log(error);
+    res.status(500);
     res.json({ status: "error", message: error });
   }
 });
@@ -527,16 +599,16 @@ router.put("/comments/:commentid", auth, verifyCommentAuthor, async (req, res) =
       { content: content_form }
     );
 
-    res.json({ status: "ok", message: "Comment Edited" });
+    res.json({ status: "ok", message: "Comment Edited", author: true });
   } catch (error) {
-    console.log(error);
+    res.status(500);
     res.json({ status: "error", message: error });
   }
 });
 
 // Replies Route
 
-router.get("/post/comments/replies/:postid", auth, async (req, res) => {
+router.get("/post/comments/reply/:postid", auth, async (req, res) => {
   try {
     const { postid } = req.params;
     const replies = await Replies.find({ post_id: postid });
@@ -546,7 +618,7 @@ router.get("/post/comments/replies/:postid", auth, async (req, res) => {
 
     res.json({ status: "ok", data: replies });
   } catch (error) {
-    console.log(error);
+    res.status(500);
     res.json({ status: "error", message: error });
   }
 });
@@ -561,7 +633,7 @@ router.get("/comments/reply/:commentid", auth, async (req, res) => {
 
     res.json({ status: "ok", data: replies });
   } catch (error) {
-    console.log(error);
+    res.status(500);
     res.json({ status: "error", message: error });
   }
 });
@@ -581,9 +653,10 @@ router.post("/comments/reply/:commentid", auth, async (req, res) => {
       author_username: [req.userloggedIn.username],
     });
 
-    res.json({ status: "ok", message: newReplies });
+    res.status(201);
+    res.json({ status: "ok", message: "Reply created", data: newReplies });
   } catch (error) {
-    console.log(error);
+    res.status(500);
     res.json({ status: "error", message: error });
   }
 });
@@ -593,14 +666,21 @@ router.put("/comments/reply/:replyId", auth, async (req, res) => {
     const { replyId } = req.params;
     const { content_form } = req.body;
 
+    const relatedReply = await Replies.findOne({ _id: replyId }).lean();
+    const replyAuthor = relatedReply.author_id?.toString() || '' ;
+
+    if (replyAuthor == req.userloggedIn.id){
     await Replies.updateOne(
       { _id: mongoose.Types.ObjectId(replyId) },
       { content: content_form }
     );
-
-    res.json({ status: "ok", message: "Reply Edited" });
+    return res.json({ status: "ok", message: "Reply Edited", author: true });
+    }
+    
+    res.status(403);
+    res.json({ status: "error", message: "You are not author of reply", author: false });
   } catch (error) {
-    console.log(error);
+    res.status(500);
     res.json({ status: "error", message: error });
   }
 });
@@ -608,11 +688,18 @@ router.put("/comments/reply/:replyId", auth, async (req, res) => {
 router.delete("/comments/reply/:replyId", auth, async (req, res) => {
   try {
     const { replyId } = req.params;
-    await Replies.deleteOne({ _id: mongoose.Types.ObjectId(replyId) })
+    const relatedReply = await Replies.findOne({ _id: replyId }).lean();
+    const replyAuthor = relatedReply.author_id?.toString() || '' ;
 
-    res.json({ status: "ok", message: "Reply Deleted" });
+    if (replyAuthor == req.userloggedIn.id){
+    await Replies.deleteOne({ _id: mongoose.Types.ObjectId(replyId) })
+    return res.json({ status: "ok", message: "Reply Deleted", author: true });
+    }
+
+    res.status(403);
+    res.json({ status: "ok", message: "You are not author of reply", author: false });
   } catch (error) {
-    console.log(error);
+    res.status(500);
     res.json({ status: "error", message: error });
   }
 });
