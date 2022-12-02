@@ -449,8 +449,9 @@ router.delete("/posts/:postid", auth, verifyPost, async (req, res) => {
 router.get("/posts/comments/:postid", auth, async (req, res) => {
   try {
     const { postid } = req.params;
+    const dataPost = await Posts.find({ _id: postid });
     const dataRundingComments = await Comment.find({ post_id: postid });
-    res.json({ status: "ok", data: dataRundingComments });
+    res.json({ status: "ok", data: {post: dataPost, comments: dataRundingComments} });
   } catch (error) {
     console.log(error);
     res.json({ status: "error", message: error });
@@ -535,6 +536,21 @@ router.put("/comments/:commentid", auth, verifyCommentAuthor, async (req, res) =
 
 // Replies Route
 
+router.get("/post/comments/replies/:postid", auth, async (req, res) => {
+  try {
+    const { postid } = req.params;
+    const replies = await Replies.find({ post_id: postid });
+    if (!replies) {
+      return res.status(404).send("Comment/post doesn't exists");
+    }
+
+    res.json({ status: "ok", data: replies });
+  } catch (error) {
+    console.log(error);
+    res.json({ status: "error", message: error });
+  }
+});
+
 router.get("/comments/reply/:commentid", auth, async (req, res) => {
   try {
     const { commentid } = req.params;
@@ -555,7 +571,10 @@ router.post("/comments/reply/:commentid", auth, async (req, res) => {
     const { commentid } = req.params;
     const { content_form } = req.body;
 
+    const relatedComment = await Comment.findOne({ _id: commentid });
+
     const newReplies = await Replies.create({
+      post_id: mongoose.Types.ObjectId(relatedComment.post_id),
       comment_id: mongoose.Types.ObjectId(commentid),
       content: content_form,
       author_id: [req.userloggedIn.id],
@@ -569,7 +588,7 @@ router.post("/comments/reply/:commentid", auth, async (req, res) => {
   }
 });
 
-router.put("/comments/reply/edit/:replyId", auth, async (req, res) => {
+router.put("/comments/reply/:replyId", auth, async (req, res) => {
   try {
     const { replyId } = req.params;
     const { content_form } = req.body;
@@ -586,26 +605,7 @@ router.put("/comments/reply/edit/:replyId", auth, async (req, res) => {
   }
 });
 
-router.put("/comments/reply/like/:replyId", auth, async (req, res) => {
-  try {
-    const { replyId } = req.params;
-    const replyLike = await Replies.findOne({ _id: replyId });
-    if (!replyLike) return res.status(400).send("reply doesn't exists");
-    await Replies.updateOne(
-      { _id: mongoose.Types.ObjectId(replyId) },
-      {
-        $push: { likes: req.userloggedIn.id },
-      }
-    );
-
-    res.json({ status: "ok", message: "Comment liked" });
-  } catch (error) {
-    console.log(error);
-    res.json({ status: "error", message: error });
-  }
-});
-
-router.delete("/comments/reply/delete/:replyId", auth, async (req, res) => {
+router.delete("/comments/reply/:replyId", auth, async (req, res) => {
   try {
     const { replyId } = req.params;
     await Replies.deleteOne({ _id: mongoose.Types.ObjectId(replyId) })
