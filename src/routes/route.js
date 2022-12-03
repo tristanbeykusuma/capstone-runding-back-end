@@ -623,6 +623,21 @@ router.get("/post/comments/reply/:postid", auth, async (req, res) => {
   }
 });
 
+router.get("/post/comments/reply/checkMember/:postid", auth, verifyCommenter, async (req, res) => {
+  try {
+    const { postid } = req.params;
+    const replies = await Replies.find({ post_id: postid });
+    if (!replies) {
+      return res.status(404).send("Comment/post doesn't exists");
+    }
+
+    res.json({ status: "ok", message: "You are part of this post's group!", member: true, data: replies });
+  } catch (error) {
+    res.status(500);
+    res.json({ status: "error", message: error });
+  }
+});
+
 router.get("/comments/reply/:commentid", auth, async (req, res) => {
   try {
     const { commentid } = req.params;
