@@ -577,6 +577,25 @@ router.put("/comments/like/:commentid", auth, commentLiked, async (req, res) => 
   }
 });
 
+router.put("/comments/unlike/:commentid", auth, async (req, res) => {
+  try {
+    const { commentid } = req.params;
+    const commentLike = await Comment.findOne({ _id: commentid });
+    if (!commentLike) return res.status(400).send("Comment doesn't exists");
+    await Comment.updateOne(
+      { _id: mongoose.Types.ObjectId(commentid) },
+      {
+        $pull: { likes: req.userloggedIn.id },
+      }
+    );
+
+    res.json({ status: "ok", message: "Remove like success" });
+  } catch (error) {
+    res.status(500);
+    res.json({ status: "error", message: error });
+  }
+});
+
 router.delete("/comments/:commentid", auth, verifyCommentAuthor, async (req, res) => {
   try {
     const { commentid } = req.params;
