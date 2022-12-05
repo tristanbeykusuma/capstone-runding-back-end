@@ -23,8 +23,8 @@ const Comment = require("../model/comment");
 const Replies = require("../model/replies");
 
 function selectFewerFields(dataObject){
-  const {_id, logo_grup, subject, jenisRunding } = dataObject;
-  return {_id, logo_grup, subject, jenisRunding };
+  const {_id, logo_grup, subject, jenisRunding, peserta, admin_username } = dataObject;
+  return {_id, logo_grup, subject, jenisRunding, peserta, admin_username };
 }
 
 /*secret token untuk json web token, hasil token yang di encode dengan base64 akan
@@ -207,6 +207,19 @@ router.get("/runding/sortByMembers", auth, async (req, res) => {
   }
 });
 
+router.get("/runding/joined", auth, async (req, res) => {
+  try {
+    const userData = await User.findOne({_id: req.userloggedIn.id});
+    const userKelas = await userData.adminkelas.concat(userData.pesertakelas);
+    const dataRunding = await Runding.find({'_id': { $in: userKelas }});
+    res.json({ status: "ok", data: dataRunding });
+  } catch (error) {
+    console.log(error);
+    res.status(500);
+    res.json({ status: "error", message: error });
+  }
+});
+
 router.get("/runding/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -223,7 +236,7 @@ router.get("/runding/:id", auth, async (req, res) => {
     if(memberRunding) {
       return res.json({ status: "ok", message: "these are the group details", member: true, data: dataRunding });
     }
-    res.json({ status: "ok", message: "these are the group details, you are not part of this group", member: false, data: { _id: dataRunding._id, subject: dataRunding.subject, logo_grup: dataRunding.logo_grup},});
+    res.json({ status: "ok", message: "these are the group details, you are not part of this group", member: false, data: { _id: dataRunding._id, subject: dataRunding.subject, logo_grup: dataRunding.logo_grup, jenisRunding : dataRunding.jenisRunding, peserta: dataRunding.peserta, admin_username: dataRunding.admin_username},});
   } catch (error) {
     res.status(500);
     res.json({ status: "error", message: error });
@@ -246,6 +259,7 @@ router.post(
         deskripsi: deskripsi_form,
         jenisRunding: jenis_form,
         administrator: [req.userloggedIn.id],
+        admin_username: [req.userloggedIn.username],
       });
 
       const class_id = newRunding._id;
@@ -258,7 +272,7 @@ router.post(
       );
 
       const io = req.app.get('socketio');
-      io.emit('new_group', `New Runding Created!!\n http://shiny-taiyaki-bddd2f.netlify.app/ruangdiskusi/${class_id}`);
+      io.emit('new_group', `New Runding Created!!\n http://shiny-taiyaki-bddd2f.netlify.app/ruang/${class_id}`);
       res.status(201);
       res.json({
         status: "ok",
@@ -311,8 +325,12 @@ router.put(
     try {
       const { id } = req.params;
       const foundRunding = await Runding.find({ _id: id, peserta: req.userloggedIn.id}).lean();
+      const foundAdmin = await Runding.find({ _id: id, administrator: req.userloggedIn.id}).lean();
       if(foundRunding.length != 0) {
         return res.json({ status: "redundant", message: "you already joined the group", member: true, data: foundRunding });
+      };
+      if(foundAdmin.length != 0) {
+        return res.json({ status: "redundant", message: "you are admin of this group", author: true, data: foundRunding });
       };
       const dataRundingJoined = await Runding.updateOne(
         { _id: mongoose.Types.ObjectId(id) },
@@ -387,6 +405,13 @@ router.delete("/runding/:id", auth, verifyAdmin, async (req, res) => {
       res.json({ status: "error", message: "no group found" });
       return;
     }
+
+    await User.updateMany(
+      { },
+      {
+        $pull: { pesertakelas: id },
+      }
+    );
     res.json({ status: "ok", message: "group deleted", author: true});
   } catch (error) {
     res.status(500);
