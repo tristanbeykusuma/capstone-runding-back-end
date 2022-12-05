@@ -207,6 +207,19 @@ router.get("/runding/sortByMembers", auth, async (req, res) => {
   }
 });
 
+router.get("/runding/joined", auth, async (req, res) => {
+  try {
+    const userData = await User.findOne({_id: req.userloggedIn.id});
+    const userKelas = await userData.adminkelas.concat(userData.pesertakelas);
+    const dataRunding = await Runding.find({'_id': { $in: userKelas }});
+    res.json({ status: "ok", data: dataRunding });
+  } catch (error) {
+    console.log(error);
+    res.status(500);
+    res.json({ status: "error", message: error });
+  }
+});
+
 router.get("/runding/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -259,7 +272,7 @@ router.post(
       );
 
       const io = req.app.get('socketio');
-      io.emit('new_group', `New Runding Created!!\n http://shiny-taiyaki-bddd2f.netlify.app/ruangdiskusi/${class_id}`);
+      io.emit('new_group', `New Runding Created!!\n http://shiny-taiyaki-bddd2f.netlify.app/ruang/${class_id}`);
       res.status(201);
       res.json({
         status: "ok",
@@ -312,8 +325,12 @@ router.put(
     try {
       const { id } = req.params;
       const foundRunding = await Runding.find({ _id: id, peserta: req.userloggedIn.id}).lean();
+      const foundAdmin = await Runding.find({ _id: id, administrator: req.userloggedIn.id}).lean();
       if(foundRunding.length != 0) {
         return res.json({ status: "redundant", message: "you already joined the group", member: true, data: foundRunding });
+      };
+      if(foundAdmin.length != 0) {
+        return res.json({ status: "redundant", message: "you are admin of this group", author: true, data: foundRunding });
       };
       const dataRundingJoined = await Runding.updateOne(
         { _id: mongoose.Types.ObjectId(id) },
