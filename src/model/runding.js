@@ -8,6 +8,7 @@ const RundingSchema = new mongoose.Schema(
     deskripsi: { type: String, required: true },
     jenisRunding: { type: String, required: true },
     administrator: [{ type: mongoose.Schema.Types.ObjectId, ref: "UserSchema" }],
+    admin_username: [{type: String}],
     peserta: [{ type: mongoose.Schema.Types.ObjectId, ref: "UserSchema" }],
     meetDate: { type: Date },
     meetLink: { type: String },

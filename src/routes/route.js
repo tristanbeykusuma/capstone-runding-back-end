@@ -23,8 +23,8 @@ const Comment = require("../model/comment");
 const Replies = require("../model/replies");
 
 function selectFewerFields(dataObject){
-  const {_id, logo_grup, subject, jenisRunding } = dataObject;
-  return {_id, logo_grup, subject, jenisRunding };
+  const {_id, logo_grup, subject, jenisRunding, peserta, admin_username } = dataObject;
+  return {_id, logo_grup, subject, jenisRunding, peserta, admin_username };
 }
 
 /*secret token untuk json web token, hasil token yang di encode dengan base64 akan
@@ -223,7 +223,7 @@ router.get("/runding/:id", auth, async (req, res) => {
     if(memberRunding) {
       return res.json({ status: "ok", message: "these are the group details", member: true, data: dataRunding });
     }
-    res.json({ status: "ok", message: "these are the group details, you are not part of this group", member: false, data: { _id: dataRunding._id, subject: dataRunding.subject, logo_grup: dataRunding.logo_grup},});
+    res.json({ status: "ok", message: "these are the group details, you are not part of this group", member: false, data: { _id: dataRunding._id, subject: dataRunding.subject, logo_grup: dataRunding.logo_grup, jenisRunding : dataRunding.jenisRunding, peserta: dataRunding.peserta, admin_username: dataRunding.admin_username},});
   } catch (error) {
     res.status(500);
     res.json({ status: "error", message: error });
@@ -246,6 +246,7 @@ router.post(
         deskripsi: deskripsi_form,
         jenisRunding: jenis_form,
         administrator: [req.userloggedIn.id],
+        admin_username: [req.userloggedIn.username],
       });
 
       const class_id = newRunding._id;
@@ -387,6 +388,13 @@ router.delete("/runding/:id", auth, verifyAdmin, async (req, res) => {
       res.json({ status: "error", message: "no group found" });
       return;
     }
+
+    await User.updateMany(
+      { },
+      {
+        $pull: { pesertakelas: id },
+      }
+    );
     res.json({ status: "ok", message: "group deleted", author: true});
   } catch (error) {
     res.status(500);
