@@ -84,7 +84,7 @@ Headers : <br />
 Content-Type: multipart/form-data<br />
 auth-token: token (string type) <br />
 Body :<br />
-form-data (subject_form: string, deskripsi_form: string, logo_form: file(image)) <br />
+form-data (subject_form: string, deskripsi_form: string, logo_form: file(image), jenis_form: string) <br />
 Response : <br />
 {   "status": "ok",
     "message": "new group created"
