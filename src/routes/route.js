@@ -243,6 +243,30 @@ router.get("/runding/:id", auth, async (req, res) => {
   }
 });
 
+router.get("/runding/administrator/:id", auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const dataRunding = await Runding.findOne({ _id: id });
+    const memberRunding = await Runding.findOne({ _id: id, peserta: req.userloggedIn.id }).lean();
+    const adminRunding = await Runding.findOne({ _id: id, administrator: req.userloggedIn.id }).lean();
+    const adminData = await User.findOne({ _id: dataRunding.administrator[0] });
+    if(!dataRunding) {
+      res.status(404);
+      return res.json({ status: "error", message: "No group with that id" });
+    }
+    if(adminRunding) {
+      return res.json({ status: "ok", message: "these are the admin's details, you are admin", author: true, data: {username: adminData.username, email: adminData.email} });
+    }
+    if(memberRunding) {
+      return res.json({ status: "ok", message: "these are the admin's details", member: true, data: {username: adminData.username, email: adminData.email} });
+    }
+    res.json({ status: "ok", message: "You are not part of this group", member: false, data: {},});
+  } catch (error) {
+    res.status(500);
+    res.json({ status: "error", message: error });
+  }
+});
+
 router.post(
   "/runding/create",
   auth,
