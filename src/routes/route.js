@@ -452,17 +452,44 @@ router.put(
       const { id } = req.params;
       const { meeting_form } = req.body;
       const now = new Date();
-      now.setHours(now.getHours() + 1);
+      const later = new Date();
+      later.setHours(later.getHours() + 1);
       const dataRundingUpdated = await Runding.updateOne(
         { _id: mongoose.Types.ObjectId(id) },
         {
           meetLink: meeting_form,
-          meetDate: now,
-          meetTime: `Meeting is going to end at ${now}`,
+          meetDateStart: now,
+          meetDateEnd: later,
+          meetTime: `Meeting ${meeting_form} starting at ${now} is going to end at ${later}`,
         }
       );
 
       res.json({ status: "ok", message: "meeting added", data: dataRundingUpdated, meetexpire: `${now}` });
+    } catch (error) {
+      res.status(500);
+      res.json({ status: "error", message: error });
+    }
+  }
+);
+
+router.put(
+  "/runding/removemeeting/:id",
+  auth,
+  verifyAdmin,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const dataRundingUpdated = await Runding.updateOne(
+        { _id: mongoose.Types.ObjectId(id) },
+        {
+          meetLink: undefined,
+          meetDateStart: undefined,
+          meetDateEnd: undefined,
+          meetTime: undefined,
+        }
+      );
+
+      res.json({ status: "ok", message: "meeting deleted", data: dataRundingUpdated });
     } catch (error) {
       res.status(500);
       res.json({ status: "error", message: error });
