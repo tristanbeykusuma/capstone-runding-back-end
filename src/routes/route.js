@@ -482,10 +482,10 @@ router.put(
       const dataRundingUpdated = await Runding.updateOne(
         { _id: mongoose.Types.ObjectId(id) },
         {
-          meetLink: undefined,
-          meetDateStart: undefined,
-          meetDateEnd: undefined,
-          meetTime: undefined,
+          meetLink: null,
+          meetDateStart: null,
+          meetDateEnd: null,
+          meetTime: null,
         }
       );
 
