@@ -296,7 +296,7 @@ router.post(
       );
 
       const io = req.app.get('socketio');
-      io.emit('new_group', `New Runding Created!!\n http://shiny-taiyaki-bddd2f.netlify.app/ruang/${class_id}`);
+      io.emit('new_group', `New Runding Created at http://shiny-taiyaki-bddd2f.netlify.app/ruang/${class_id}`);
       res.status(201);
       res.json({
         status: "ok",
