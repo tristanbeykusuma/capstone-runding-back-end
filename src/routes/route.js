@@ -207,6 +207,18 @@ router.get("/runding/sortByMembers", auth, async (req, res) => {
   }
 });
 
+router.get("/runding/admined", auth, async (req, res) => {
+  try {
+    const userData = await User.findOne({_id: req.userloggedIn.id});
+    const dataRunding = await Runding.find({'_id': { $in: userData.adminkelas }});
+    res.json({ status: "ok", data: dataRunding });
+  } catch (error) {
+    console.log(error);
+    res.status(500);
+    res.json({ status: "error", message: error });
+  }
+});
+
 router.get("/runding/joined", auth, async (req, res) => {
   try {
     const userData = await User.findOne({_id: req.userloggedIn.id});
