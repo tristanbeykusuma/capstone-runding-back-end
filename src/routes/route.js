@@ -445,7 +445,10 @@ router.delete("/runding/:id", auth, verifyAdmin, async (req, res) => {
     await User.updateMany(
       { },
       {
-        $pull: { pesertakelas: id },
+        $pull: {
+            pesertakelas: id,
+            adminkelas: id
+        },
       }
     );
     res.json({ status: "ok", message: "group deleted", author: true});
