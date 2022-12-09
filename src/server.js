@@ -44,7 +44,9 @@ const server = app.listen(PORT, () => {
 });
 
 //sockets for live chat
-const io = new Server(server);
+const io = new Server(server, {
+  cors: { origin: "*" },
+});
 
 io.use(async (socket, next) => {
   const token = socket.handshake.headers.auth;
