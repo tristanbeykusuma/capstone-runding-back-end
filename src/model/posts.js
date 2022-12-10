@@ -8,7 +8,7 @@ const PostsSchema = new mongoose.Schema(
     description: { type: String, required: true },
     tags: [String],
     author: [{ type: mongoose.Schema.Types.ObjectId, ref: "UserSchema" }],
-    username_author: { type: String }
+    username_author: { type: String },
     replies: [{ type: mongoose.Schema.Types.ObjectId, ref: "CommentSchema" }],
   },
   { collection: "posts", timestamps: true }
