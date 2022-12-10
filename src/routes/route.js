@@ -547,6 +547,7 @@ router.post("/runding/posts/create/:id", auth, verifyUser, async (req, res) => {
       description: description_form,
       tags: tags_form,
       author: [req.userloggedIn.id],
+      username_author: req.userloggedIn.username,
     });
     res.status(201);
     res.json({ status: "ok", message: "new question/post created", member: true, data: newPost });
